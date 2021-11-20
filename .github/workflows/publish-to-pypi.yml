@@ -30,6 +30,7 @@ jobs:
         # TAG_VERSION can be also obtained with:
         # poetry version $(git describe --tags --abbrev=0)
         poetry version $TAG_VERSION
+        poetry config repo.pypi-switch https://pypi.switch-ev.com/
         poetry config http-basic.pypi-switch $PYPI_USER $PYPI_PASS
         poetry update
         poetry build
