@@ -11,8 +11,14 @@ runs:
   - name: Install Poetry
     shell: bash
     run: |
-      #curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python3
-      #source $HOME/.poetry/env
-      #poetry -n init
+      # curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python3
+      # source $HOME/.poetry/env
+      # poetry -n init
       pip install --user poetry
       pip install "mypy==0.910"
+      # set the config got pypi-switch
+      poetry config repo.pypi-switch https://pypi.switch-ev.com/
+      poetry config http-basic.pypi-switch $PYPI_USER $PYPI_PASS
+    env:
+      PYPI_USER: ${{ secrets.PYPI_USER }}
+      PYPI_PASS: ${{ secrets.PYPI_PASS }}
