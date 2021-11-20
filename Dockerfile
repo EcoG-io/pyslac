@@ -15,16 +15,8 @@ ENV PYTHONFAULTHANDLER=1 \
   POETRY_VERSION=1.1.11 \
   VIRTUALENV_PIP=21.2.1
 
-
-# create virtualenv
-RUN python -m venv /venv
-# Make sure we use the virtualenv:
-ENV PATH="/venv/bin:$PATH"
-
-# This is needed if we use pip wheel
-RUN pip install wheel
-
 RUN pip install "poetry==$POETRY_VERSION"
+
 # Due to an issue with Python 3.10 and poetry, if we use a poetry virtual env,
 # we need to disable the option: poetry config experimental.new-installer false
 # check https://github.com/python-poetry/poetry/issues/4210
@@ -48,53 +40,28 @@ RUN pytest -vv --cov-config .coveragerc --cov-report term-missing  --durations=3
 RUN flake8 --config .flake8 slac tests
 
 
-
-# NOTE: Building the .whl with poetry at this stage and installing it in the next
-# stage env, works if we install the mqtt-api explicitly, otherwise the poetry
-# install dist/ fails. This seems to be a bug in `poetry build` command:
-# https://github.com/python-poetry/poetry/issues/2831
-# The alternative was to generate the requirements without-hashes as mqtt-api has no
-# hashes and generate the wheels for the requirements
-
-#  ALTERNATIVE TO BE USED
-# RUN poetry install --no-interaction --no-ansi --no-dev
-
-# Exports no-dev dependencies
-RUN poetry export -f requirements.txt --without-hashes  --with-credentials > requirements.txt
 # Generate the wheel to be used by next stage
-RUN poetry build -f wheel
-RUN pip wheel -w dist -r requirements.txt
+RUN poetry build
 # Unfortunately, couldnt find a way to generate only compatible wheels with this
 # platform, so I had to remove the MacOS .whl for the dir
 RUN rm dist/*macosx*
 
-# ALTERNATIVE TO BE USED
-# RUN poetry build
 
 # Runtime image (which is smaller than the build one)
 FROM python:3.10.0-buster
-
-# ARG PYPI_USER
-# ARG PYPI_PASS
 
 WORKDIR /usr/src/app
 
 # create virtualenv
 RUN python -m venv /venv
 
-# ALTERNATIVE TO BE USED
-# copy dependencies and wheel from the build stage
-# COPY --from=build /venv /venv
-# COPY --from=build /usr/src/app ./
-
-
 COPY --from=build /usr/src/app/dist/ dist/
-# mqtt dependency is not part of the iso15118 .whl, so it is not ideal, but the
-# solution is to explicitly install the package
-# RUN /venv/bin/pip install --index-url https://$PYPI_USER:$PYPI_PASS@pypi.switch-ev.com/simple mqtt_api
 
-#This will install the wheels in the venv
+
+# This will install the wheels in the venv
 RUN /venv/bin/pip install dist/*.whl
+# if it does not work use
+# RUN /venv/bin/pip install dist/*.whl --extra-index-url https://$PYPI_USER:$PYPI_PASS@pypi.switch-ev.com/simple
 
 # This will run the entrypoint script defined in the pyproject.toml
 CMD /venv/bin/slac

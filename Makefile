@@ -36,7 +36,7 @@ poetry-config: .check-env-vars
 	poetry config http-basic.pypi-switch ${PYPI_USER} ${PYPI_PASS}
 
 poetry-update: poetry-config
-	poetry update --require-hashes
+	poetry update
 
 poetry-install: poetry-update
 	poetry install
