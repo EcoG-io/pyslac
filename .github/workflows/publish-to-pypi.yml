@@ -1,0 +1,40 @@
+name: Publish Python 🐍 distributions 📦 to Switch PyPI
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+*"
+
+jobs:
+  build-n-publish:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Set up Python 3.10.0
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.10.0
+
+    - name: Tries to get the tag version or branch name
+      id: context
+      run: |
+        echo ::set-output name=BRANCH_NAME::${GITHUB_REF#refs/heads/}
+        echo ::set-output name=TAG_VERSION::${GITHUB_REF#refs/tags/}
+
+    - name: Setup the Python Environment by installing Poetry
+      uses: ./.github/actions/setup-python-build-env
+
+    - name: Poetry bump version, build and publish
+      shell: bash
+      run: |
+        # TAG_VERSION can be also obtained with:
+        # poetry version $(git describe --tags --abbrev=0)
+        poetry version $TAG_VERSION
+        poetry config http-basic.pypi-switch $PYPI_USER $PYPI_PASS
+        poetry update
+        poetry build
+        poetry publish -r pypi-switch
+      env:
+        TAG_VERSION: ${{ steps.context.outputs.TAG_VERSION }}
+        PYPI_USER: ${{ secrets.PYPI_USER }}
+        PYPI_PASS: ${{ secrets.PYPI_PASS }}

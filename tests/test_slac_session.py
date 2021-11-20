@@ -35,13 +35,12 @@ from slac.enums import (
     FramesSizes,
 )
 from slac.layer_2_headers import EthernetHeader, HomePlugHeader
+from slac.messages import AttenProfile  # MnbcSound,
 from slac.messages import (
     AtennChar,
     AtennCharRsp,
-    AttenProfile,
     MatchCnf,
     MatchReq,
-    # MnbcSound,
     SetKeyCnf,
     SetKeyReq,
     SlacParmCnf,

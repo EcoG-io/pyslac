@@ -95,11 +95,11 @@ class StartAttenChar(Packet):
         XByteField(
             "num_sounds", 2
         ),  # This defines the number of sounds that the EV will send to the EVSE.
-            # And overrides the expected sounds defined by enum SLAC_MSOUNDS
+        # And overrides the expected sounds defined by enum SLAC_MSOUNDS
         XByteField(
             "time_out", 100
         ),  # This defines the time to 10 secs (100 * 100 ms) that the EV must
-            # deliver the mnbc sounds before the EVSE times out
+        # deliver the mnbc sounds before the EVSE times out
         XByteField("resp_type", 0x01),
         XNBytesField("forwarding_sta", 0, 6),
         XNBytesField("run_id", 0, 8),

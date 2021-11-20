@@ -3,15 +3,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
+# dist
+dist/
 # C extensions
 *.so
 # .bkp files
 *.bkp
-# Dockerfiles inside evcc and secc
-iso15118/evcc/Dockerfile
-iso15118/secc/Dockerfile
-iso15118/iso15118/evcc/Dockerfile
-iso15118/iso15118/secc/Dockerfile
 # Distribution / packaging
 .Python
 build/
@@ -112,9 +109,3 @@ venv.bak/
 
 .idea/*
 
-# Generated X.509 certificates, private keys, and PKCS12 container files
-*.pem
-*.der
-*.key
-*.p12
-iso15118/shared/pki/csrs
