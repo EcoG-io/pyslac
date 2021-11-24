@@ -42,13 +42,12 @@ RUN flake8 --config .flake8 slac tests
 
 # Generate the wheel to be used by next stage
 RUN poetry build
-# Unfortunately, couldnt find a way to generate only compatible wheels with this
-# platform, so I had to remove the MacOS .whl for the dir
-RUN rm dist/*macosx*
-
 
 # Runtime image (which is smaller than the build one)
 FROM python:3.10.0-buster
+
+ARG PYPI_USER
+ARG PYPI_PASS
 
 WORKDIR /usr/src/app
 
@@ -59,9 +58,9 @@ COPY --from=build /usr/src/app/dist/ dist/
 
 
 # This will install the wheels in the venv
-RUN /venv/bin/pip install dist/*.whl
-# if it does not work use
-# RUN /venv/bin/pip install dist/*.whl --extra-index-url https://$PYPI_USER:$PYPI_PASS@pypi.switch-ev.com/simple
+# We need to specify the Switch Pypis server as extra-index to look for, in
+# order to install switch custom libs
+RUN /venv/bin/pip install dist/*.whl --extra-index-url https://$PYPI_USER:$PYPI_PASS@pypi.switch-ev.com/simple
 
 # This will run the entrypoint script defined in the pyproject.toml
 CMD /venv/bin/slac
