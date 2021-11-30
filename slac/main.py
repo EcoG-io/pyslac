@@ -1,3 +1,8 @@
+from slac.utils import is_distro_linux
+
+if not is_distro_linux():
+    raise EnvironmentError("Non-Linux systems are not supported")
+
 import asyncio
 import json
 import logging
@@ -6,30 +11,22 @@ from dataclasses import asdict
 from asyncio_mqtt import Client
 from asyncio_mqtt.client import ProtocolVersion
 from mqtt_api import validator
-from mqtt_api.enums import ActionType, JOSEVAPIMessage, MessageName, SlacStatus, Topics
+from mqtt_api.enums import (
+    ActionType,
+    JOSEVAPIMessage,
+    MessageName,
+    MessageStatus,
+    SlacStatus,
+    Topics,
+)
 
 from slac.enums import EVSE_ID, STATE_MATCHED, STATE_MATCHING, STATE_UNMATCHED
-from slac.environment import MQTT_PASS, MQTT_URL, MQTT_USER, NETWORK_INTERFACE
+from slac.environment import MQTT_HOST, MQTT_PORT, NETWORK_INTERFACE
 from slac.session import SlacEvseSession
-from slac.utils import cancel_task, is_distro_linux, wait_till_finished
+from slac.utils import cancel_task, mqtt_send, wait_till_finished
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("main")
-
-
-async def mqtt_send(message: dict, topic: str):
-    """
-    Publish a message to a specific topic.
-
-    RECEIVES: 2 strings containing, the meeesage to be sent (param No. 1)
-    and the topic (param No.2).
-
-    RETURNS: nothing.
-    """
-    async with Client(
-        MQTT_URL, username=MQTT_USER, password=MQTT_PASS, protocol=ProtocolVersion.V31
-    ) as client:
-        await client.publish(topic, payload=json.dumps(message), qos=2, retain=False)
 
 
 async def control_pilot_monitoring(slac_session: "SlacEvseSession"):
@@ -37,12 +34,12 @@ async def control_pilot_monitoring(slac_session: "SlacEvseSession"):
     Task to constantly monitor the Control Pilot state
     """
     async with Client(
-        MQTT_URL, username=MQTT_USER, password=MQTT_PASS, protocol=ProtocolVersion.V31
+        hostname=MQTT_HOST, port=MQTT_PORT, protocol=ProtocolVersion.V31
     ) as client:
         async with client.filtered_messages(Topics.SLAC_CS) as messages:
             # subscribe is done afterwards so that we just start receiving
             # messages from this point on
-            await client.subscribe("slac/#")
+            await client.subscribe(Topics.SLAC_CS)
             async for message_encoded in messages:
                 message = json.loads(message_encoded.payload)
                 if message.get("name") not in [
@@ -71,7 +68,7 @@ async def control_pilot_monitoring(slac_session: "SlacEvseSession"):
                 )
                 await mqtt_send(asdict(answer), Topics.SLAC_JOSEV)
                 await process_mqtt_message(slac_session, message)
-                if data_field["status"] == "accepted":
+                if data_field["status"] == MessageStatus.ACCEPTED:
                     await process_mqtt_message(slac_session, message)
 
 
@@ -185,9 +182,6 @@ async def matching_process(slac_session: "SlacEvseSession", number_of_retries=3)
 
 
 async def main():
-    if not is_distro_linux():
-        raise EnvironmentError("Non Linux systems are not supported")
-
     # Initialize the Slac Session
     slac_session = SlacEvseSession(NETWORK_INTERFACE)
     await slac_session.evse_set_key()

@@ -33,6 +33,8 @@ RUN poetry update
 
 # Copy the project to the system and install all dependencies
 COPY . ./
+# The Env file must be copied to run the tests
+RUN mv .env.dev .env
 RUN poetry install --no-interaction --no-ansi
 # Run the tests and linting for slac (as we are not using poetry venv, we are
 # not running it with RUN poetry run pytest...)

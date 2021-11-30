@@ -1,23 +1,26 @@
-import json
-import os
-from contextlib import suppress
+import logging
+
+import environs
 
 from slac.enums import Timers
 
+logger = logging.getLogger(__name__)
 
-def load_from_env(variable, default=None):
-    """Read values from the environment and try to convert values from json"""
-    value = os.environ.get(variable, default)
-    if value is not None:
-        with suppress(json.decoder.JSONDecodeError, TypeError):
-            value = json.loads(value)
-    return value
 
+env = environs.Env(eager=False)
+env.read_env()  # read .env file, if it exists
+
+NETWORK_INTERFACE = env.str("NETWORK_INTERFACE", default="eth0")
+MQTT_HOST = env("MQTT_HOST")
+MQTT_PORT = env.int("MQTT_PORT")
+REDIS_HOST = env.str("REDIS_HOST")
+REDIS_PORT = env.int("REDIS_PORT")
 
 # This timer is set in docker-compose.dev.yml, for merely debugging and dev
 # reasons
-SLAC_INIT_TIMEOUT = load_from_env("SLAC_INIT_TIMEOUT", default=Timers.SLAC_INIT_TIMEOUT)
-NETWORK_INTERFACE = load_from_env("NETWORK_INTERFACE", default="eth0")
-MQTT_URL = load_from_env("MQTT_URL", default="broker.hivemq.com")
-MQTT_USER = load_from_env("MQTT_USER")
-MQTT_PASS = load_from_env("MQTT_PASS")
+SLAC_INIT_TIMEOUT = env.float("SLAC_INIT_TIMEOUT", default=Timers.SLAC_INIT_TIMEOUT)
+
+LOG_LEVEL = env.str("LOG_LEVEL", default="INFO")
+
+
+env.seal()  # raise all errors at once, if any

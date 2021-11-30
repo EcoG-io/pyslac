@@ -1,0 +1,5 @@
+version: '3.9'
+services:
+  slac:
+    network_mode: host
+    env_file: .env
