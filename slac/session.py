@@ -261,8 +261,10 @@ class SlacEvseSession(SlacSession):
         :return:
         """
         return await asyncio.wait_for(
-            readeth(self.socket, self.iface, rcv_frame_size,
-                    self.config.slac_init_timeout), timeout
+            readeth(
+                self.socket, self.iface, rcv_frame_size, self.config.slac_init_timeout
+            ),
+            timeout,
         )
 
     async def leave_logical_network(self):
@@ -361,7 +363,7 @@ class SlacEvseSession(SlacSession):
             # it this frame requires padding)
             data_rcvd = await self.rcv_frame(
                 rcv_frame_size=FramesSizes.CM_SLAC_PARM_REQ,
-                timeout=self.config.slac_init_timeout
+                timeout=self.config.slac_init_timeout,
             )
         except TimeoutError as e:
             self.state = STATE_UNMATCHED

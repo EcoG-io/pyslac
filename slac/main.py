@@ -35,8 +35,8 @@ async def control_pilot_monitoring(slac_session: "SlacEvseSession"):
     """
     async with Client(
         hostname=slac_session.config.mqtt_host,
-            port=slac_session.config.mqtt_port,
-            protocol=ProtocolVersion.V31
+        port=slac_session.config.mqtt_port,
+        protocol=ProtocolVersion.V31,
     ) as client:
         async with client.filtered_messages(Topics.SLAC_CS) as messages:
             # subscribe is done afterwards so that we just start receiving
@@ -171,9 +171,7 @@ async def matching_process(slac_session: "SlacEvseSession", number_of_retries=3)
                     type=ActionType.UPDATE,
                     data=data_field,
                 )
-                await mqtt_send(asdict(message),
-                                Topics.SLAC_JOSEV,
-                                slac_session.config)
+                await mqtt_send(asdict(message), Topics.SLAC_JOSEV, slac_session.config)
         else:
             logger.error(f"SLAC State not recognized {slac_session.state}")
 

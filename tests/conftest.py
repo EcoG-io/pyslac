@@ -7,7 +7,7 @@ from slac.session import SlacEvseSession
 
 
 @pytest.fixture
-def dummy_config() -> 'Config':
+def dummy_config() -> "Config":
     return Config(iface="en0", slac_init_timeout=1)
 
 

@@ -16,9 +16,7 @@ from socket import (
 from struct import pack
 from typing import Optional
 
-
-from slac.enums import BUFF_MAX_SIZE
-from slac.enums import Timers
+from slac.enums import BUFF_MAX_SIZE, Timers
 from slac.sockets.enums import (
     BPF_ABS,
     BPF_H,

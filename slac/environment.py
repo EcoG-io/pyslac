@@ -1,7 +1,9 @@
 import logging
-import environs
-from typing import Optional
 from dataclasses import dataclass
+from typing import Optional
+
+import environs
+
 from slac.enums import Timers
 
 logger = logging.getLogger(__name__)
@@ -29,8 +31,9 @@ class Config:
 
         # This timer is set in docker-compose.dev.yml, for merely debugging and dev
         # reasons
-        self.slac_init_timeout = env.float("SLAC_INIT_TIMEOUT",
-                                           default=Timers.SLAC_INIT_TIMEOUT)
+        self.slac_init_timeout = env.float(
+            "SLAC_INIT_TIMEOUT", default=Timers.SLAC_INIT_TIMEOUT
+        )
 
         self.log_level = env.str("LOG_LEVEL", default="INFO")
 
