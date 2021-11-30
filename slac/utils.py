@@ -13,7 +13,7 @@ from typing import Any, Awaitable, List
 from asyncio_mqtt import Client
 from asyncio_mqtt.client import ProtocolVersion
 
-from slac.environment import MQTT_HOST, MQTT_PORT
+from slac.environment import Config
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("slac_utils")
@@ -32,7 +32,7 @@ ARPHDR_TUN = 65534
 NID_LENGTH = 7
 
 
-async def mqtt_send(message: dict, topic: str):
+async def mqtt_send(message: dict, topic: str, config: Config):
     """
     Publish a message to a specific topic.
 
@@ -42,7 +42,7 @@ async def mqtt_send(message: dict, topic: str):
     RETURNS: nothing.
     """
     async with Client(
-        hostname=MQTT_HOST, port=MQTT_PORT, protocol=ProtocolVersion.V31
+        hostname=config.mqtt_host, port=config.mqtt_port, protocol=ProtocolVersion.V31
     ) as client:
         await client.publish(topic, payload=json.dumps(message), qos=2, retain=False)
 
