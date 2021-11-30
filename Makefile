@@ -93,6 +93,3 @@ deploy: .check-env-vars .deps build bump-version
 	poetry config repo.pypi-switch https://pypi.switch-ev.com/
 	poetry config http-basic.pypi-switch ${PYPI_USER} ${PYPI_PASS}
 	poetry publish -r pypi-switch
-
-# deploy-twine: .check-env-vars .deps build
-# 	python -m twine upload -u $(PYPI_USER) -p $(PYPI_PASS) --repository-url https://pypi.switch-ev.com dist/*
