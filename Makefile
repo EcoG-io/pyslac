@@ -1,5 +1,5 @@
 # all the recipes are phony (no files to check).
-.PHONY: .check-env-vars .deps docs tests build dev run update install-local run-local deploy deploy-twine help
+.PHONY: .check-env-vars .deps docs tests build dev run update install-local run-local deploy help
 .DEFAULT_GOAL := help
 
 IS_LINUX_OS := $(shell uname -s | grep -c Linux)
@@ -17,12 +17,11 @@ help:
 	@echo "  dev               runs the app with docker-compose.dev"
 	@echo "  run-local         runs the app locally"
 	@echo "  poetry-update     updates the dependencies in poetry.lock"
-	@echo "  poetry-install    installs the dependencies"
+	@echo "  install-local     installs slac into the current environment"
 	@echo "  tests             run all the tests"
 	@echo "  reformat          reformats the code, using Black"
 	@echo "  flake8            flakes8 the code"
-	@echo "  deploy            deploys the project using Poetry (not recommended, only use if relly needed)"
-	@echo "  deploy-twine      deploys the project using Twine (not recommended, only use if relly needed)"
+	@echo "  deploy            deploys the project using Poetry (not recommended, only use if really needed)"
 	@echo ""
 	@echo "Check the Makefile to know exactly what each target is doing."
 
@@ -52,8 +51,8 @@ dev: .check-env-vars
     # the dev file apply changes to the original compose file
 	docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
 
-run: build
-	docker-compose up
+run: .check-env-vars
+	docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
 
 poetry-config: .check-env-vars
 	# For external packages, poetry saves metadata
@@ -67,6 +66,8 @@ poetry-update: poetry-config
 
 poetry-install: poetry-update
 	poetry install
+
+install-local: poetry-install
 
 run-local:
 	python slac/main.py
@@ -92,6 +93,3 @@ deploy: .check-env-vars .deps build bump-version
 	poetry config repo.pypi-switch https://pypi.switch-ev.com/
 	poetry config http-basic.pypi-switch ${PYPI_USER} ${PYPI_PASS}
 	poetry publish -r pypi-switch
-
-deploy-twine: .check-env-vars .deps build
-	python -m twine upload -u $(PYPI_USER) -p $(PYPI_PASS) --repository-url https://pypi.switch-ev.com dist/*

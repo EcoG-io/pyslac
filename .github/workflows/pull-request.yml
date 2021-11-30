@@ -18,6 +18,10 @@ jobs:
     - name: Setup the Python Environment by installing Poetry
       uses: ./.github/actions/setup-python-build-env
 
+    - name: Create env file
+      run: |
+        cp .env.dev .env
+
     - name: Code Quality Check
       shell: bash
       run: |
