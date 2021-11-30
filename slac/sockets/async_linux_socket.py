@@ -16,8 +16,9 @@ from socket import (
 from struct import pack
 from typing import Optional
 
+
 from slac.enums import BUFF_MAX_SIZE
-from slac.environment import SLAC_INIT_TIMEOUT
+from slac.enums import Timers
 from slac.sockets.enums import (
     BPF_ABS,
     BPF_H,
@@ -176,7 +177,7 @@ async def readeth(
     bytes_left = rcv_frame_size - len(bytes_rcvd)
     if bytes_left > 0 and rcv_frame_size < BUFF_MAX_SIZE:
         time_elapsed = time_now_ms() - time_start
-        if time_elapsed > SLAC_INIT_TIMEOUT * 1000:  # in ms
+        if time_elapsed > Timers.SLAC_INIT_TIMEOUT * 1000:  # in ms
             raise asyncio.TimeoutError
         bytes_rcvd = bytes_rcvd + await readeth(s=s, iface=iface, time_start=time_start)
     return bytes_rcvd
@@ -204,7 +205,7 @@ async def send_recv_eth(
         await sendeth(frame_to_send, s=s)
         data_rcvd = await asyncio.wait_for(
             readeth(s=s, iface=iface, rcv_frame_size=rcv_frame_size),
-            timeout=SLAC_INIT_TIMEOUT,
+            timeout=Timers.SLAC_INIT_TIMEOUT,
         )
     except asyncio.TimeoutError as e:
         logger.exception(e, exc_info=True)

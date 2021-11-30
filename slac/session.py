@@ -38,7 +38,7 @@ from slac.enums import (
 
 # This timeout is imported from the environment file, because it makes it
 # easier to use it with the dev compose file for dev and debugging reasons
-from slac.environment import SLAC_INIT_TIMEOUT
+from slac.environment import Config
 from slac.layer_2_headers import EthernetHeader, HomePlugHeader
 from slac.messages import (
     AtennChar,
@@ -228,10 +228,10 @@ class SlacSession:
 class SlacEvseSession(SlacSession):
     # pylint: disable=too-many-instance-attributes, too-many-arguments
     # pylint: disable=logging-fstring-interpolation, broad-except
-    def __init__(self, iface: str):
-
-        host_mac = get_if_hwaddr(iface)
-        self.iface = iface
+    def __init__(self, config: Config):
+        self.config = config
+        host_mac = get_if_hwaddr(self.config.iface)
+        self.iface = self.config.iface
         self.socket = create_socket(iface=self.iface, port=0)
         self.evse_plc_mac = EVSE_PLC_MAC
         SlacSession.__init__(self, state=STATE_UNMATCHED, evse_mac=host_mac)
@@ -261,7 +261,8 @@ class SlacEvseSession(SlacSession):
         :return:
         """
         return await asyncio.wait_for(
-            readeth(self.socket, self.iface, rcv_frame_size), timeout
+            readeth(self.socket, self.iface, rcv_frame_size,
+                    self.config.slac_init_timeout), timeout
         )
 
     async def leave_logical_network(self):
@@ -359,7 +360,8 @@ class SlacEvseSession(SlacSession):
             # Padding = 31 bytes (The min ETH frame must have 60 bytes,
             # it this frame requires padding)
             data_rcvd = await self.rcv_frame(
-                rcv_frame_size=FramesSizes.CM_SLAC_PARM_REQ, timeout=SLAC_INIT_TIMEOUT
+                rcv_frame_size=FramesSizes.CM_SLAC_PARM_REQ,
+                timeout=self.config.slac_init_timeout
             )
         except TimeoutError as e:
             self.state = STATE_UNMATCHED

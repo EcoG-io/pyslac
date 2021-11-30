@@ -21,7 +21,7 @@ from mqtt_api.enums import (
 )
 
 from slac.enums import EVSE_ID, STATE_MATCHED, STATE_MATCHING, STATE_UNMATCHED
-from slac.environment import MQTT_HOST, MQTT_PORT, NETWORK_INTERFACE
+from slac.environment import Config
 from slac.session import SlacEvseSession
 from slac.utils import cancel_task, mqtt_send, wait_till_finished
 
@@ -34,7 +34,9 @@ async def control_pilot_monitoring(slac_session: "SlacEvseSession"):
     Task to constantly monitor the Control Pilot state
     """
     async with Client(
-        hostname=MQTT_HOST, port=MQTT_PORT, protocol=ProtocolVersion.V31
+        hostname=slac_session.config.mqtt_host,
+            port=slac_session.config.mqtt_port,
+            protocol=ProtocolVersion.V31
     ) as client:
         async with client.filtered_messages(Topics.SLAC_CS) as messages:
             # subscribe is done afterwards so that we just start receiving
@@ -66,7 +68,7 @@ async def control_pilot_monitoring(slac_session: "SlacEvseSession"):
                     type=ActionType.RESPONSE,
                     data=data_field,
                 )
-                await mqtt_send(asdict(answer), Topics.SLAC_JOSEV)
+                await mqtt_send(asdict(answer), Topics.SLAC_JOSEV, slac_session.config)
                 await process_mqtt_message(slac_session, message)
                 if data_field["status"] == MessageStatus.ACCEPTED:
                     await process_mqtt_message(slac_session, message)
@@ -136,7 +138,7 @@ async def matching_process(slac_session: "SlacEvseSession", number_of_retries=3)
                 type=ActionType.UPDATE,
                 data=data_field,
             )
-            await mqtt_send(asdict(message), Topics.SLAC_JOSEV)
+            await mqtt_send(asdict(message), Topics.SLAC_JOSEV, slac_session.config)
             await slac_session.atten_charac_routine()
         if slac_session.state == STATE_MATCHED:
             logger.debug("PEV-EVSE MATCHED Successfully, Link Established")
@@ -169,7 +171,9 @@ async def matching_process(slac_session: "SlacEvseSession", number_of_retries=3)
                     type=ActionType.UPDATE,
                     data=data_field,
                 )
-                await mqtt_send(asdict(message), Topics.SLAC_JOSEV)
+                await mqtt_send(asdict(message),
+                                Topics.SLAC_JOSEV,
+                                slac_session.config)
         else:
             logger.error(f"SLAC State not recognized {slac_session.state}")
 
@@ -182,8 +186,11 @@ async def matching_process(slac_session: "SlacEvseSession", number_of_retries=3)
 
 
 async def main():
+    # get configuration
+    config = Config()
+    config.load_envs()
     # Initialize the Slac Session
-    slac_session = SlacEvseSession(NETWORK_INTERFACE)
+    slac_session = SlacEvseSession(config)
     await slac_session.evse_set_key()
     # Spawn the control pilot monitor task
     task = [control_pilot_monitoring(slac_session)]
