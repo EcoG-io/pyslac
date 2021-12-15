@@ -262,7 +262,7 @@ class SlacEvseSession(SlacSession):
         """
         return await asyncio.wait_for(
             readeth(
-                self.socket, self.iface, rcv_frame_size, self.config.slac_init_timeout
+                self.socket, self.iface, rcv_frame_size
             ),
             timeout,
         )
