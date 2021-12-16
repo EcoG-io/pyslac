@@ -27,7 +27,7 @@ help:
 
 
 .check-os:
-    # The @ is to surpress the output of the evaluation
+	# The @ is to surpress the output of the evaluation
 	@if [ ${IS_LINUX_OS} -eq 0 ]; then echo "This Recipe is not available in non-Linux Systems"; exit 3; fi
 
 .check-env-vars:
@@ -44,7 +44,7 @@ docs:
 tests: .check-os
 	poetry run pytest -vv tests
 
-build: .check-env-vars
+build: .check-env-vars .poetry-config
 	docker-compose build
 
 dev: .check-env-vars
@@ -59,6 +59,9 @@ poetry-config: .check-env-vars
 	# in it's cache which can raise versioning problems, if the package
 	# suffered version support changes. Thus, we clean poetry cache
 	yes | poetry cache clear --all mqtt_api
+	sed -i.bkp 's@<username>:<password>@${PYPI_USER}:${PYPI_PASS}@g' pyproject.toml
+	# Due to a Keyring issue under Ubuntu systems, the password configuration does not work as expected: https://github.com/python-poetry/poetry/issues/4902
+	# As so, instead we use sed to substitute the credentials. Nevertheless, the poetry config stays here as it does not impact negatively the system in any way
 	poetry config http-basic.pypi-switch ${PYPI_USER} ${PYPI_PASS}
 
 poetry-update: poetry-config
