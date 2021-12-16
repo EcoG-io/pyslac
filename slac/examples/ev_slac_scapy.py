@@ -31,7 +31,7 @@ from slac.utils import get_if_hwaddr
 
 BROADCAST_ADDR = "FF:FF:FF:FF:FF:FF"
 ATHEROS_CHIP_MAC = "00:b0:52:00:00:01"
-IFACE = "bridge0"
+IFACE = "enp0s3"
 
 
 class HomePlugHeader(Packet):
@@ -190,6 +190,7 @@ homeplug_header.mm_type = CM_SLAC_PARM | MMTYPE_REQ
 eth_header.dst = BROADCAST_ADDR
 slac_parm_req = SlacParmReq()
 frame_rsp = eth_header / homeplug_header / slac_parm_req
+sleep(10)
 sendp(frame_rsp, iface=IFACE)
 
 # Start Atten Char
