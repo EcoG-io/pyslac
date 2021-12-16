@@ -191,7 +191,7 @@ eth_header.dst = BROADCAST_ADDR
 slac_parm_req = SlacParmReq()
 frame_rsp = eth_header / homeplug_header / slac_parm_req
 sendp(frame_rsp, iface=IFACE)
-sleep(5)
+
 # Start Atten Char
 homeplug_header.mm_type = CM_START_ATTEN_CHAR | MMTYPE_IND
 eth_header.dst = BROADCAST_ADDR
@@ -200,7 +200,6 @@ frame_rsp = eth_header / homeplug_header / start_atten_char
 # The EV may send 3 start atten char, but the QCA chip will forward only 1
 # to the application
 sendp(frame_rsp, iface=IFACE)
-sleep(5)
 
 # MNBC Sound
 # Send 2 times, since we defined 2 num of sounds in StartAttenChar
@@ -218,14 +217,13 @@ atten_profile = AttenProfile(pev_mac=host_mac_int)
 frame_rsp_atten = eth_header / homeplug_header / atten_profile
 
 sendp(frame_rsp_mnbc, iface=IFACE)
-sleep(1)
+sleep(0.1)
 sendp(frame_rsp_atten, iface=IFACE)
-sleep(1)
+sleep(0.1)
 sendp(frame_rsp_mnbc, iface=IFACE)
-sleep(1)
+sleep(0.1)
 sendp(frame_rsp_atten, iface=IFACE)
-
-sleep(5)
+sleep(0.1)
 
 
 # EV Receives a Atten Char Indicator and shall respond with Response
@@ -236,7 +234,7 @@ eth_header.dst = host_mac
 atten_char_rsp = AttenCharResp(source_address=host_mac_int)
 frame_rsp = eth_header / homeplug_header / atten_char_rsp
 sendp(frame_rsp, iface=IFACE)
-sleep(5)
+sleep(0.2)
 
 
 # EV does the Atten threshold calculation and evaluation, then sends a Match
