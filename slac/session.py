@@ -232,6 +232,7 @@ class SlacEvseSession(SlacSession):
         self.config = config
         host_mac = get_if_hwaddr(self.config.iface)
         self.iface = self.config.iface
+        logger.debug(f"Interface selected: {self.iface}")
         self.socket = create_socket(iface=self.iface, port=0)
         self.evse_plc_mac = EVSE_PLC_MAC
         SlacSession.__init__(self, state=STATE_UNMATCHED, evse_mac=host_mac)
@@ -261,9 +262,7 @@ class SlacEvseSession(SlacSession):
         :return:
         """
         return await asyncio.wait_for(
-            readeth(
-                self.socket, self.iface, rcv_frame_size
-            ),
+            readeth(self.socket, self.iface, rcv_frame_size),
             timeout,
         )
 
