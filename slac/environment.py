@@ -20,9 +20,17 @@ class Config:
     slac_init_timeout: Optional[int] = None
     log_level: Optional[int] = None
 
-    def load_envs(self) -> None:
+    def load_envs(self, env_path: Optional[str] = None) -> None:
+        """
+        Tries to load the .env file containing all the project settings.
+        If `env_path` is not specified, it will get the .env on the current
+        working directory of the project
+        Args:
+            env_path (str): Absolute path to the location of the .env file
+        """
         env = environs.Env(eager=False)
-        env_path = os.getcwd() + "/.env"
+        if not env_path:
+            env_path = os.getcwd() + "/.env"
         env.read_env(path=env_path)  # read .env file, if it exists
         self.iface = env.str("NETWORK_INTERFACE", default="eth0")
         self.mqtt_host = env.str("MQTT_HOST")

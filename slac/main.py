@@ -1,3 +1,4 @@
+from typing import Optional
 from slac.utils import is_distro_linux
 
 if not is_distro_linux():
@@ -187,10 +188,10 @@ async def matching_process(slac_session: "SlacEvseSession", number_of_retries=3)
     await slac_session.leave_logical_network()
 
 
-async def main():
+async def main(env_path: Optional[str] = None):
     # get configuration
     config = Config()
-    config.load_envs()
+    config.load_envs(env_path)
     # Initialize the Slac Session
     slac_session = SlacEvseSession(config)
     await slac_session.evse_set_key()
