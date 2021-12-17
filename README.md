@@ -110,13 +110,21 @@ Any of those variables can also be set by exporting their value in the env:
    There are two possible solutions:
    1. Explicitly inject the credentials into pyproject.toml
       For that you can use the following command:
-      `make configure-credentials`
+      `$ make set-credentials`
    2. Disable your Keyring for Python, following the steps on this page:
       https://blog.frank-mich.com/python-poetry-1-0-0-private-repo-issue-fix/
 
    If you follow one of the above steps, the installation shall run smoothly.
 
+2. `make run-local` may not work in your system
 
+   SLAC requires the use of Level 2 frames, as so, the app requires low level access to
+   the socket interface. Such level of access is only attained with root priviliges, so
+   if the user group that your system is using does not have root priviliges, the app will
+   fail to run.
+
+   In order to run the app with root priviliges, try the following command, instead:
+   `$ make run-local-sudo`
 
 ## Integration Test with an EV SLAC Simulator
 

@@ -17,8 +17,10 @@ help:
 	@echo "  run               runs the app in Docker with prod settings"
 	@echo "  dev               runs the app in Docker with dev settings"
 	@echo "  run-local         runs the app locally with prod settings"
+	@echo "  run-local-sudo    runs the app locally using prod settings and root privileges"
 	@echo "  poetry-update     updates the dependencies in poetry.lock"
 	@echo "  install-local     installs slac into the current environment"
+	@echo "  set-credentials   sets the Switch PyPi credentials directly into pyroject.toml. Use this recipe with caution"
 	@echo "  tests             run all the tests"
 	@echo "  reformat          reformats the code, using Black"
 	@echo "  flake8            flakes8 the code"
@@ -56,16 +58,16 @@ run: .check-env-vars
 	docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
 
 poetry-config: .check-env-vars
-	# For external packages, poetry saves metadata
-	# in it's cache which can raise versioning problems, if the package
-	# suffered version support changes. Thus, we clean poetry cache
+	@# For external packages, poetry saves metadata
+	@# in it's cache which can raise versioning problems, if the package
+	@# suffered version support changes. Thus, we clean poetry cache
 	yes | poetry cache clear --all mqtt_api
 	sed -i.bkp 's@<username>:<password>@${PYPI_USER}:${PYPI_PASS}@g' pyproject.toml
 	poetry config http-basic.pypi-switch ${PYPI_USER} ${PYPI_PASS}
 
-configure-credentials: .check-env-vars
-	# Due to a Keyring issue under Ubuntu systems, the password configuration does not work as expected: https://github.com/python-poetry/poetry/issues/4902
-	# As so, instead we use sed to substitute the credentials.
+set-credentials: .check-env-vars
+	@# Due to a Keyring issue under Ubuntu systems, the password configuration does not work as expected: https://github.com/python-poetry/poetry/issues/4902
+	@# As so, instead we use sed to substitute the credentials.
 	sed -i.bkp 's@https://pypi.switch-ev.com/simple/@https://${PYPI_USER}:${PYPI_PASS}\@pypi.switch-ev.com/simple/@g' pyproject.toml
 
 poetry-update: poetry-config
@@ -78,6 +80,9 @@ install-local: .pip-install
 
 run-local:
 	python slac/main.py
+
+run-local-sudo:
+	sudo $(shell which python) slac/main.py
 
 mypy:
 	mypy --config-file mypy.ini slac tests
