@@ -84,6 +84,9 @@ run-local:
 run-local-sudo:
 	sudo $(shell which python) slac/main.py
 
+run-ev-slac:
+	sudo $(shell which python) slac/examples/ev_slac_scapy.py
+
 mypy:
 	mypy --config-file mypy.ini slac tests
 
