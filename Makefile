@@ -1,5 +1,5 @@
 # all the recipes are phony (no files to check).
-.PHONY: .check-env-vars .deps docs tests build dev run update install-local run-local deploy help
+.PHONY: .check-env-vars .deps .pip-install docs tests build dev run update install-local run-local deploy help configure-credentials
 .DEFAULT_GOAL := help
 
 IS_LINUX_OS := $(shell uname -s | grep -c Linux)
@@ -14,8 +14,9 @@ help:
 	@echo "Please use 'make <target>' where <target> is one of"
 	@echo ""
 	@echo "  build             builds the app in Docker"
-	@echo "  dev               runs the app with docker-compose.dev"
-	@echo "  run-local         runs the app locally"
+	@echo "  run               runs the app in Docker with prod settings"
+	@echo "  dev               runs the app in Docker with dev settings"
+	@echo "  run-local         runs the app locally with prod settings"
 	@echo "  poetry-update     updates the dependencies in poetry.lock"
 	@echo "  install-local     installs slac into the current environment"
 	@echo "  tests             run all the tests"
@@ -60,17 +61,20 @@ poetry-config: .check-env-vars
 	# suffered version support changes. Thus, we clean poetry cache
 	yes | poetry cache clear --all mqtt_api
 	sed -i.bkp 's@<username>:<password>@${PYPI_USER}:${PYPI_PASS}@g' pyproject.toml
-	# Due to a Keyring issue under Ubuntu systems, the password configuration does not work as expected: https://github.com/python-poetry/poetry/issues/4902
-	# As so, instead we use sed to substitute the credentials. Nevertheless, the poetry config stays here as it does not impact negatively the system in any way
 	poetry config http-basic.pypi-switch ${PYPI_USER} ${PYPI_PASS}
+
+configure-credentials: .check-env-vars
+	# Due to a Keyring issue under Ubuntu systems, the password configuration does not work as expected: https://github.com/python-poetry/poetry/issues/4902
+	# As so, instead we use sed to substitute the credentials.
+	sed -i.bkp 's@https://pypi.switch-ev.com/simple/@https://${PYPI_USER}:${PYPI_PASS}\@pypi.switch-ev.com/simple/@g' pyproject.toml
 
 poetry-update: poetry-config
 	poetry update
 
-poetry-install: poetry-update
-	poetry install
+.pip-install: poetry-update
+	pip install . --extra-index-url https://$PYPI_USER:$PYPI_PASS@pypi.switch-ev.com/simple
 
-install-local: poetry-install
+install-local: .pip-install
 
 run-local:
 	python slac/main.py

@@ -30,13 +30,14 @@ There are two recommended ways of running the project:
    $ make run-local
    ```
 
-   If you follow this path, then you will need to provide the PYPI credentials
-   and export them as ENVs:
+For a successful dependencies installation, you will need to provide the
+credentials to the Switch PyPi private server:
 
    ```shell
    $ export PYPI_USER=****
    $ export PYPI_PASS=****
    ```
+Contact André <andre@switch-ev.com> if you have questions about it.
 
 The last required step to effectively start the SLAC mechanism, is to force the
 detection of state `B`of the Control Pilot circuit. This project relies on
@@ -56,20 +57,66 @@ async with Client("broker.hivemq.com") as client:
 For more information about the MQTT API used by Switch check the following link:
 https://app.gitbook.com/@switch-ev/s/josev-api/
 
-Finally, the project includes a few configuration variables whose default
-values can be modified by setting them as an environmental variable:
+Finally, the project includes a few configuration variables, whose default
+values can be modified by setting them as environmental variables.
+The following table provides a few of the available variables:
 
 | ENV               | Default Value         | Description                                                                    |
 | ----------------- | --------------------- | ------------------------------------------------------------------------------ |
 | NETWORK_INTERFACE | `"eth0"`              | HomePlug Network Interface                                                     |
 | SLAC_INIT_TIMEOUT | `50`                  | Timeout[s] for the reception of the first slac message after state B detection |
-| MQTT_URL          | `"broker.hivemq.com"` | MQTT Broker URL                                                                |
-| MQTT_USER         | `None`                | Username for Client Authorization                                              |
-| MQTT_PASS         | `None`                | Password for Client Authorization                                              |
+| MQTT_HOST         | No Default            | MQTT Broker URL                                                                |
+| MQTT_PORT         | No Default            | MQTT Broker Port                                                               |
+| LOG_LEVEL         | `INFO`                | Level of the Python log service                                                |
 
-Any of those variables can be set by exporting their value in the env:
+
+The project includes a few environmental files, in the root directory, for 
+different purposes:
+
+* `.env.dev.docker` - ENV file with development settings, tailored to be used with docker
+* `.env.dev.local` - ENV file with development settings, tailored to be used with 
+the local host
+
+If the user runs the project locally, e.g. using `$ make install-local && make run-local`,
+it is required to create a `.env` file, containing the required settings.
+
+This means, if development settings are desired, one can simply copy the contents
+of `.env.dev.local` to `.env`.
+
+If Docker is used, the command `make run` will try to get the `.env` file;
+The command `make dev` will fetch the contents of `.env.dev.docker` - thus,
+in this case, the user does not need to create a `.env` file, as Docker will
+automatically fetch the `.env.dev.docker` one.
+
+The key-value pairs defined in the `.env` file directly affect the settings
+present in `slac/environment.py`. In this script, the user will find all the settings that can be configured.
+
+Any of those variables can also be set by exporting their value in the env:
 
 `$ export NETWORK_INTERFACE=eth1`
+
+
+
+## Known Issues and Limitation
+
+1. `make install-local`or `make poetry-update` may fail, depending on your system.
+   Poetry relies on the `Keyring` of your system and, unfortunately, this can create
+   problems. The common outcome is that Poetry won't authenticate against the
+   Switch private PyPi server:
+   ```shell
+   RepositoryError
+       403 Client Error: Forbidden for url: https://pypi.switch-ev.com/simple/flake8/
+   ```
+   There are two possible solutions:
+   1. Explicitly inject the credentials into pyproject.toml
+      For that you can use the following command:
+      `make configure-credentials`
+   2. Disable your Keyring for Python, following the steps on this page:
+      https://blog.frank-mich.com/python-poetry-1-0-0-private-repo-issue-fix/
+
+   If you follow one of the above steps, the installation shall run smoothly.
+
+
 
 ## Integration Test with an EV SLAC Simulator
 

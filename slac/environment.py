@@ -15,8 +15,6 @@ class Config:
     iface: Optional[str] = None
     mqtt_host: Optional[str] = None
     mqtt_port: Optional[int] = None
-    redis_host: Optional[str] = None
-    redis_port: Optional[int] = None
     slac_init_timeout: Optional[int] = None
     log_level: Optional[int] = None
 
@@ -35,8 +33,6 @@ class Config:
         self.iface = env.str("NETWORK_INTERFACE", default="eth0")
         self.mqtt_host = env.str("MQTT_HOST")
         self.mqtt_port = env.int("MQTT_PORT")
-        self.redis_host = env.str("REDIS_HOST")
-        self.redis_port = env.int("REDIS_PORT")
 
         # This timer is set in docker-compose.dev.yml, for merely debugging and dev
         # reasons
