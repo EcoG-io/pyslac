@@ -1,4 +1,5 @@
 from typing import Optional
+
 from slac.utils import is_distro_linux
 
 if not is_distro_linux():
