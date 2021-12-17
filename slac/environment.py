@@ -1,3 +1,4 @@
+import os
 import logging
 from dataclasses import dataclass
 from typing import Optional
@@ -21,8 +22,8 @@ class Config:
 
     def load_envs(self) -> None:
         env = environs.Env(eager=False)
-        env.read_env()  # read .env file, if it exists
-
+        env_path = os.getcwd() + "/.env"
+        env.read_env(path=env_path)  # read .env file, if it exists
         self.iface = env.str("NETWORK_INTERFACE", default="eth0")
         self.mqtt_host = env.str("MQTT_HOST")
         self.mqtt_port = env.int("MQTT_PORT")

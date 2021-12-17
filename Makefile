@@ -44,7 +44,7 @@ docs:
 tests: .check-os
 	poetry run pytest -vv tests
 
-build: .check-env-vars .poetry-config
+build: .check-env-vars
 	docker-compose build
 
 dev: .check-env-vars
