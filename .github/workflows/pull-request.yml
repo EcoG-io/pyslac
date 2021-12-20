@@ -20,7 +20,7 @@ jobs:
 
     - name: Create env file
       run: |
-        cp .env.dev .env
+        cp .env.dev.local .env
 
     - name: Code Quality Check
       shell: bash

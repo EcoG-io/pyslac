@@ -1,3 +1,5 @@
+from typing import Optional
+
 from slac.utils import is_distro_linux
 
 if not is_distro_linux():
@@ -50,9 +52,13 @@ async def control_pilot_monitoring(slac_session: "SlacEvseSession"):
                 ]:
                     logger.warning(f"Unexpected Message {message.get('name')}")
                     continue
-                data_field = {"status": "rejected"}
-                if validator.validate_message(message):
-                    data_field = {"status": "accepted"}
+                try:
+                    validator.validate_message(message)
+                    data_field = {"status": MessageStatus.ACCEPTED}
+                except validator.MqttApiValidationError as exp:
+                    logger.exception(f"Schema Validation Failed {exp}")
+                    data_field = {"status": MessageStatus.REJECTED}
+
                 if message.get("type") == ActionType.RESPONSE:
                     # if the message is of the type Response, then just return
                     # nevertheless, validation is done first just to check
@@ -62,6 +68,7 @@ async def control_pilot_monitoring(slac_session: "SlacEvseSession"):
                         f"is: {message['data']}"
                     )
                     continue
+
                 answer = JOSEVAPIMessage(
                     id=message["id"],
                     name=message["name"],
@@ -69,7 +76,6 @@ async def control_pilot_monitoring(slac_session: "SlacEvseSession"):
                     data=data_field,
                 )
                 await mqtt_send(asdict(answer), Topics.SLAC_JOSEV, slac_session.config)
-                await process_mqtt_message(slac_session, message)
                 if data_field["status"] == MessageStatus.ACCEPTED:
                     await process_mqtt_message(slac_session, message)
 
@@ -183,10 +189,10 @@ async def matching_process(slac_session: "SlacEvseSession", number_of_retries=3)
     await slac_session.leave_logical_network()
 
 
-async def main():
+async def main(env_path: Optional[str] = None):
     # get configuration
     config = Config()
-    config.load_envs()
+    config.load_envs(env_path)
     # Initialize the Slac Session
     slac_session = SlacEvseSession(config)
     await slac_session.evse_set_key()

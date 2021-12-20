@@ -8,5 +8,3 @@ services:
         - PYPI_USER=${PYPI_USER}
         - PYPI_PASS=${PYPI_PASS}
       dockerfile: Dockerfile
-    env_file: .env.dev
-
