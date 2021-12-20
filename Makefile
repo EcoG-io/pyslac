@@ -62,7 +62,6 @@ poetry-config: .check-env-vars
 	@# in it's cache which can raise versioning problems, if the package
 	@# suffered version support changes. Thus, we clean poetry cache
 	yes | poetry cache clear --all mqtt_api
-	sed -i.bkp 's@<username>:<password>@${PYPI_USER}:${PYPI_PASS}@g' pyproject.toml
 	poetry config http-basic.pypi-switch ${PYPI_USER} ${PYPI_PASS}
 
 set-credentials: .check-env-vars
@@ -73,10 +72,8 @@ set-credentials: .check-env-vars
 poetry-update: poetry-config
 	poetry update
 
-.pip-install: poetry-update
+install-local: .check-env-vars
 	pip install . --extra-index-url https://$PYPI_USER:$PYPI_PASS@pypi.switch-ev.com/simple
-
-install-local: .pip-install
 
 run-local:
 	python slac/main.py
