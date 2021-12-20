@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- Removed uneeded Timeout setting in `readeth` method, by @tropxy in https://github.com/SwitchEV/slac/pull/6
+- Removed unneeded Timeout setting in `readeth` method, by @tropxy in https://github.com/SwitchEV/slac/pull/6
 
 ### Changed
 
