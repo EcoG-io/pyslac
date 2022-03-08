@@ -5,17 +5,17 @@ if not is_distro_linux():
 
 
 import asyncio
-import logging
 import functools
-from typing import Optional, Any, Set, List
-from inspect import isawaitable
+import logging
 from dataclasses import dataclass
-from asyncio_mqtt.client import Client
+from inspect import isawaitable
+from typing import Any, List, Optional, Set
 
+from asyncio_mqtt.client import Client
 from mqtt_api.mqtt import Mqtt
 from mqtt_api.routing import on
 from mqtt_api.v1 import request, response
-from mqtt_api.v1.enums import CpStates, MessageName, Topics, SlacStatus
+from mqtt_api.v1.enums import CpStates, MessageName, SlacStatus, Topics
 
 from slac.enums import STATE_MATCHED, STATE_MATCHING, STATE_UNMATCHED
 from slac.environment import Config
@@ -37,16 +37,19 @@ def get_session(f):
     Decorator to get the session saved in the attribute running sessions
     of SlacHandler, based on the evse_id
     """
+
     @functools.wraps(f)
     async def inner(self, *args, **kwargs):
         for session in self.running_sessions:
-            if session.evse_id == kwargs['evse_id']:
+            if session.evse_id == kwargs["evse_id"]:
                 response = f(self, session, *args, **kwargs)
                 if isawaitable(response):
                     response = await response
                 return response
-        raise AttributeError(f"There is no running session with "
-                             f"evse_id {kwargs['evse_id']}")
+        raise AttributeError(
+            f"There is no running session with " f"evse_id {kwargs['evse_id']}"
+        )
+
     return inner
 
 
@@ -64,9 +67,7 @@ class SlacHandler(Mqtt):
         # reference saved to prevent it being
         # forgotten https://bugs.python.org/issue44665
         self.running_tasks.add(mqtt_start_task)
-        mqtt_start_task.add_done_callback(
-            lambda t: self.running_tasks.remove(t)
-        )
+        mqtt_start_task.add_done_callback(lambda t: self.running_tasks.remove(t))
         await self.get_cs_parameters()
 
     async def get_cs_parameters(self):
@@ -75,15 +76,15 @@ class SlacHandler(Mqtt):
         )
 
         if cs_parameters.number_of_evses < 1 or (
-                len(cs_parameters.parameters) != cs_parameters.number_of_evses):
-            raise AttributeError(
-                "Number of evses provided is invalid."
-            )
+            len(cs_parameters.parameters) != cs_parameters.number_of_evses
+        ):
+            raise AttributeError("Number of evses provided is invalid.")
 
         for evse_params in cs_parameters.parameters:
             # Initialize the Slac Session
-            slac_session = SlacEvseSession(evse_params.evse_id,
-                                           evse_params.network_interface, self.config)
+            slac_session = SlacEvseSession(
+                evse_params.evse_id, evse_params.network_interface, self.config
+            )
             await slac_session.evse_set_key()
             self.running_sessions.append(slac_session)
 
@@ -91,7 +92,7 @@ class SlacHandler(Mqtt):
         super().__init__(
             mqtt_client=lambda: Client(config.mqtt_host, config.mqtt_port),
             topics=[Topics.CS_JOSEV],
-            response_timeout=60
+            response_timeout=60,
         )
         self.config = config
         self.running_tasks: Set[asyncio.Task] = set()
@@ -137,9 +138,7 @@ class SlacHandler(Mqtt):
             )
 
     async def matching_process(
-            self,
-            slac_session: "SlacEvseSession",
-            number_of_retries=3
+        self, slac_session: "SlacEvseSession", number_of_retries=3
     ) -> None:
         """
         Task that is spawned once a state change is detected from A. E or F to
@@ -161,7 +160,9 @@ class SlacHandler(Mqtt):
                 logger.debug("Matching ongoing...")
                 await self.update(
                     topic=Topics.JOSEV_CS,
-                    payload=SlacStatusPayload(slac_session.evse_id, SlacStatus.MATCHING)
+                    payload=SlacStatusPayload(
+                        slac_session.evse_id, SlacStatus.MATCHING
+                    ),
                 )
                 await slac_session.atten_charac_routine()
             if slac_session.state == STATE_MATCHED:
@@ -189,8 +190,9 @@ class SlacHandler(Mqtt):
                     logger.error("PEV-EVSE MATCHED Failed: No more retries " "possible")
                     await self.update(
                         topic=Topics.JOSEV_CS,
-                        payload=SlacStatusPayload(slac_session.evse_id,
-                                                  SlacStatus.FAILED)
+                        payload=SlacStatusPayload(
+                            slac_session.evse_id, SlacStatus.FAILED
+                        ),
                     )
             else:
                 logger.error(f"SLAC State not recognized {slac_session.state}")
