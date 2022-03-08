@@ -106,7 +106,7 @@ async def test_set_key(evse_slac_session, dummy_config, evse_mac):
                 send_rcv_patch.assert_called_with(
                     frame_to_send=key_req_frame,
                     rcv_frame_size=FramesSizes.CM_SET_KEY_CNF,
-                    iface=dummy_config.iface,
+                    iface=evse_slac_session.iface,
                 )
 
 

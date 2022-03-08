@@ -39,9 +39,17 @@ credentials to the Switch PyPi private server:
    ```
 Contact André <andre@switch-ev.com> if you have questions about it.
 
-The last required step to effectively start the SLAC mechanism, is to force the
-detection of state `B`of the Control Pilot circuit. This project relies on
-a request/response API based on a pub/sub philosophy adopted by MQTT.
+In order to start the SLAC session, it is required to provide some information
+like the network intarface(s) where the Power Line Communication is associated to.
+That information is exchanged through Switch's proprietary API, which is a
+request/response/update API based on the pub/sub philosophy adopted by MQTT.
+
+
+1. First step is to send the `cs_parameters` message containing all the available
+network interfaces and also the associated `evse_id`
+2. After that, it is required to send the message `cp_status` which contains the
+status of the Control Pilot line.
+
 Thus, in order to force the algorithm to listen for SLAC frames, we need a
 MQTT broker and a client that sends a message notifying the Control Pilot state;
 This is demonstrated in the following snippet, where it is assumed we are using
@@ -63,7 +71,6 @@ The following table provides a few of the available variables:
 
 | ENV               | Default Value         | Description                                                                    |
 | ----------------- | --------------------- | ------------------------------------------------------------------------------ |
-| NETWORK_INTERFACE | `"eth0"`              | HomePlug Network Interface                                                     |
 | SLAC_INIT_TIMEOUT | `50`                  | Timeout[s] for the reception of the first slac message after state B detection |
 | MQTT_HOST         | No Default            | MQTT Broker URL                                                                |
 | MQTT_PORT         | No Default            | MQTT Broker Port                                                               |

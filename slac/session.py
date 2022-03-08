@@ -192,9 +192,6 @@ class SlacSession:
     # contains the reference to the task running the matching session
     matching_process_task: Optional[asyncio.Task] = None
 
-    # counter for the id of the MQTT API
-    mqtt_msg_counter: int = 0
-
     def reset(self):
         """
         It resets the session values to their default values
@@ -228,11 +225,12 @@ class SlacSession:
 class SlacEvseSession(SlacSession):
     # pylint: disable=too-many-instance-attributes, too-many-arguments
     # pylint: disable=logging-fstring-interpolation, broad-except
-    def __init__(self, config: Config):
+    def __init__(self, evse_id: str, iface: str, config: Config):
+        self.iface = iface
+        self.evse_id = evse_id
         self.config = config
-        host_mac = get_if_hwaddr(self.config.iface)
-        self.iface = self.config.iface
-        logger.debug(f"Interface selected: {self.iface}")
+        host_mac = get_if_hwaddr(self.iface)
+        logger.debug(f"Session for evse_id {self.evse_id} on interface {self.iface}")
         self.socket = create_socket(iface=self.iface, port=0)
         self.evse_plc_mac = EVSE_PLC_MAC
         SlacSession.__init__(self, state=STATE_UNMATCHED, evse_mac=host_mac)
