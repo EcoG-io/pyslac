@@ -93,10 +93,7 @@ class SlacHandler(Mqtt):
     @get_session
     @on(MessageName.CP_STATUS)
     async def on_cp_status(
-        self,
-        slac_session: "SlacEvseSession",
-        state: CpStates,
-        **kwargs: Any
+        self, slac_session: "SlacEvseSession", state: CpStates, **kwargs: Any
     ) -> None:
         """
         If it is the case a matching process is not ongoing

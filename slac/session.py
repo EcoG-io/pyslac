@@ -224,8 +224,9 @@ class SlacEvseSession(SlacSession):
         self.evse_id = evse_id
         self.config = config
         host_mac = get_if_hwaddr(self.iface)
-        logger.debug(f"Session created for evse_id {self.evse_id} on "
-                     f"interface {self.iface}")
+        logger.debug(
+            f"Session created for evse_id {self.evse_id} on " f"interface {self.iface}"
+        )
         self.socket = create_socket(iface=self.iface, port=0)
         self.evse_plc_mac = EVSE_PLC_MAC
         SlacSession.__init__(self, state=STATE_UNMATCHED, evse_mac=host_mac)
