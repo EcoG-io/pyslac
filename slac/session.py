@@ -16,7 +16,6 @@ from slac.enums import (
     CM_SLAC_PARM,
     CM_START_ATTEN_CHAR,
     ETH_TYPE_HPAV,
-    EVSE_ID,
     EVSE_PLC_MAC,
     HOMEPLUG_MMV,
     MMTYPE_CNF,
@@ -119,10 +118,6 @@ class SlacSession:
     # request->ethernet.OSA
     pev_mac: bytes = b""
 
-    # 17 bytes
-    # EVSE_ID
-    evse_id: bytes = bytes.fromhex(EVSE_ID)
-
     # 6 byte EVSE MAC address
     # get channel own MAC in static signed identifier from channel->host
     # received by EV in pev_cm_atten_char for the first time
@@ -203,7 +198,6 @@ class SlacSession:
         self.forwarding_sta = b""
         self.pev_id = None
         self.pev_mac = b""
-        self.evse_id = bytes.fromhex(EVSE_ID)
         self.evse_mac = b""
         self.run_id = b""
         self.application_type = 0x00
@@ -230,7 +224,8 @@ class SlacEvseSession(SlacSession):
         self.evse_id = evse_id
         self.config = config
         host_mac = get_if_hwaddr(self.iface)
-        logger.debug(f"Session for evse_id {self.evse_id} on interface {self.iface}")
+        logger.debug(f"Session created for evse_id {self.evse_id} on "
+                     f"interface {self.iface}")
         self.socket = create_socket(iface=self.iface, port=0)
         self.evse_plc_mac = EVSE_PLC_MAC
         SlacSession.__init__(self, state=STATE_UNMATCHED, evse_mac=host_mac)

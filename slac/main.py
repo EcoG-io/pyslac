@@ -54,24 +54,24 @@ def get_session(f):
 
 
 class SlacHandler(Mqtt):
-    @staticmethod
-    def _build_mqtt(hostname: str, port: int) -> Mqtt:
-        return Mqtt(
-            mqtt_client=lambda: Client(hostname, port),
+    def __init__(self, config: Config):
+        super().__init__(
+            mqtt_client=lambda: Client(config.mqtt_host, config.mqtt_port),
             topics=[Topics.CS_JOSEV],
             response_timeout=60,
         )
-
-    async def run(self):
-        mqtt_start_task = asyncio.create_task(self.start())
-        # reference saved to prevent it being
-        # forgotten https://bugs.python.org/issue44665
-        self.running_tasks.add(mqtt_start_task)
-        mqtt_start_task.add_done_callback(lambda t: self.running_tasks.remove(t))
-        await self.get_cs_parameters()
+        self.config = config
+        self.running_tasks: Set[asyncio.Task] = set()
+        self.running_sessions: List["SlacEvseSession"] = []
 
     async def get_cs_parameters(self):
-        cs_parameters: response.CsParametersPayload = await self.request(
+        mqtt_service = Mqtt(
+            mqtt_client=lambda: Client(self.config.mqtt_host, self.config.mqtt_port),
+            topics=[Topics.CS_JOSEV],
+            response_timeout=60,
+        )
+        mqtt_initial_task = asyncio.create_task(mqtt_service.start())
+        cs_parameters: response.CsParametersPayload = await mqtt_service.request(
             topic=Topics.JOSEV_CS, payload=request.CsParametersPayload()
         )
 
@@ -88,23 +88,15 @@ class SlacHandler(Mqtt):
             await slac_session.evse_set_key()
             self.running_sessions.append(slac_session)
 
-    def __init__(self, config: Config):
-        super().__init__(
-            mqtt_client=lambda: Client(config.mqtt_host, config.mqtt_port),
-            topics=[Topics.CS_JOSEV],
-            response_timeout=60,
-        )
-        self.config = config
-        self.running_tasks: Set[asyncio.Task] = set()
-        self.running_sessions: List["SlacEvseSession"] = []
+        await cancel_task(mqtt_initial_task)
 
     @get_session
     @on(MessageName.CP_STATUS)
     async def on_cp_status(
         self,
         slac_session: "SlacEvseSession",
-        status: CpStates,
-        **kwargs: Any,
+        state: CpStates,
+        **kwargs: Any
     ) -> None:
         """
         If it is the case a matching process is not ongoing
@@ -118,8 +110,8 @@ class SlacHandler(Mqtt):
         # Some states contain the indication if the station can provide energy
         # or not (e.g. A1 - it cant, A2 it can); so we get only the first character
         # from the string, since is that what we are interested here.
-        cp_state = status[0]
-        logger.debug(f"CP State Received: {status}")
+        cp_state = state[0]
+        logger.debug(f"CP State Received: {state}")
         if cp_state in ["A", "E", "F"] and slac_session.matching_process_task:
             if cp_state == "A" or slac_session.state == STATE_MATCHED:
                 # We kill the task if a direct transition to state A is detected
@@ -211,8 +203,9 @@ async def main(env_path: Optional[str] = None):
     config.load_envs(env_path)
 
     slac_handler = SlacHandler(config)
+    await slac_handler.get_cs_parameters()
     # Spawn the cs_parameters and the mqtt incoming task
-    task = [slac_handler.run()]
+    task = [slac_handler.start()]
     await wait_till_finished(task)
 
 
