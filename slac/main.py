@@ -35,7 +35,7 @@ class SlacStatusPayload:
 def get_session(f):
     """
     Decorator to get the session saved in the attribute running sessions
-    of SlacHandler, based on the evse_id
+    of SlacHandler, based on the evse_id.
     """
 
     @functools.wraps(f)
@@ -65,13 +65,31 @@ class SlacHandler(Mqtt):
         self.running_sessions: List["SlacEvseSession"] = []
 
     async def get_cs_parameters(self):
-        mqtt_service = Mqtt(
-            mqtt_client=lambda: Client(self.config.mqtt_host, self.config.mqtt_port),
-            topics=[Topics.CS_JOSEV],
-            response_timeout=60,
-        )
-        mqtt_initial_task = asyncio.create_task(mqtt_service.start())
-        cs_parameters: response.CsParametersPayload = await mqtt_service.request(
+        """
+        Task to request the cs_parameters of the station.
+
+        The response shall contain a similar payload as follows:
+        "id": "c2ff42ec-a6f6-4830-8916-440ac690bb9a",
+        "name": "cs_parameters",
+        "type": "response",
+        "data": {
+            "sw_version": "v1.0.1",
+            "hw_version": "v2.0.0",
+            "number_of_evses": 1,
+            "parameters": [{
+                    "evse_id": "DE*SWT*E123456789",
+                    "supports_eim": False,
+                    "network_interface": "eth0",
+                    "connectors": [...],
+
+        If no answer is provided in 60s, a timeout occurs and the slac application stops
+
+        Note:
+            The evse_id provided must be unique and is assumed to be associated to
+            one and one only network_interface. This is important, as the 'evse_id' is
+            used in subsequent messages as an identifier of the running session.
+        """
+        cs_parameters: response.CsParametersPayload = await self.request(
             topic=Topics.JOSEV_CS, payload=request.CsParametersPayload()
         )
 
@@ -87,8 +105,6 @@ class SlacHandler(Mqtt):
             )
             await slac_session.evse_set_key()
             self.running_sessions.append(slac_session)
-
-        await cancel_task(mqtt_initial_task)
 
     @get_session
     @on(MessageName.CP_STATUS)
@@ -200,10 +216,9 @@ async def main(env_path: Optional[str] = None):
     config.load_envs(env_path)
 
     slac_handler = SlacHandler(config)
-    await slac_handler.get_cs_parameters()
     # Spawn the cs_parameters and the mqtt incoming task
-    task = [slac_handler.start()]
-    await wait_till_finished(task)
+    tasks = [slac_handler.start(), slac_handler.get_cs_parameters()]
+    await wait_till_finished(tasks)
 
 
 def run():
