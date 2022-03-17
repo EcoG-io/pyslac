@@ -161,6 +161,8 @@ def get_if_raw_hwaddr_linux(iff: str, siocgifhwaddr: int = SIOCGIFHWADDR):
     try:
         # input/output control
         raw_addr = ioctl(sck, siocgifhwaddr, struct.pack("16s16x", iff.encode("utf8")))
+    except OSError as e:
+        raise OSError(f"There is no such interface {iff}") from e
     finally:
         sck.close()
     # raw_addr is a 32 bytes buffer

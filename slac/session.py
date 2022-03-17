@@ -16,7 +16,6 @@ from slac.enums import (
     CM_SLAC_PARM,
     CM_START_ATTEN_CHAR,
     ETH_TYPE_HPAV,
-    EVSE_ID,
     EVSE_PLC_MAC,
     HOMEPLUG_MMV,
     MMTYPE_CNF,
@@ -119,10 +118,6 @@ class SlacSession:
     # request->ethernet.OSA
     pev_mac: bytes = b""
 
-    # 17 bytes
-    # EVSE_ID
-    evse_id: bytes = bytes.fromhex(EVSE_ID)
-
     # 6 byte EVSE MAC address
     # get channel own MAC in static signed identifier from channel->host
     # received by EV in pev_cm_atten_char for the first time
@@ -192,9 +187,6 @@ class SlacSession:
     # contains the reference to the task running the matching session
     matching_process_task: Optional[asyncio.Task] = None
 
-    # counter for the id of the MQTT API
-    mqtt_msg_counter: int = 0
-
     def reset(self):
         """
         It resets the session values to their default values
@@ -206,7 +198,6 @@ class SlacSession:
         self.forwarding_sta = b""
         self.pev_id = None
         self.pev_mac = b""
-        self.evse_id = bytes.fromhex(EVSE_ID)
         self.evse_mac = b""
         self.run_id = b""
         self.application_type = 0x00
@@ -228,11 +219,14 @@ class SlacSession:
 class SlacEvseSession(SlacSession):
     # pylint: disable=too-many-instance-attributes, too-many-arguments
     # pylint: disable=logging-fstring-interpolation, broad-except
-    def __init__(self, config: Config):
+    def __init__(self, evse_id: str, iface: str, config: Config):
+        self.iface = iface
+        self.evse_id = evse_id
         self.config = config
-        host_mac = get_if_hwaddr(self.config.iface)
-        self.iface = self.config.iface
-        logger.debug(f"Interface selected: {self.iface}")
+        host_mac = get_if_hwaddr(self.iface)
+        logger.debug(
+            f"Session created for evse_id {self.evse_id} on " f"interface {self.iface}"
+        )
         self.socket = create_socket(iface=self.iface, port=0)
         self.evse_plc_mac = EVSE_PLC_MAC
         SlacSession.__init__(self, state=STATE_UNMATCHED, evse_mac=host_mac)
