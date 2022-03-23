@@ -67,7 +67,7 @@ poetry-config: .check-env-vars
 set-credentials: .check-env-vars
 	@# Due to a Keyring issue under Ubuntu systems, the password configuration does not work as expected: https://github.com/python-poetry/poetry/issues/4902
 	@# As so, instead we use sed to substitute the credentials.
-	sed -i.bkp 's@https://pypi.switch-ev.com/simple/@https://${PYPI_USER}:${PYPI_PASS}\@pypi.switch-ev.com/simple/@g' pyproject.toml
+	sed -i.bkp "s@https://pypi.switch-ev.com/simple/@https://${PYPI_USER}:${PYPI_PASS}\@pypi.switch-ev.com/simple/@g" pyproject.toml
 
 poetry-update: poetry-config
 	poetry update
