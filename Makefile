@@ -1,5 +1,5 @@
 # all the recipes are phony (no files to check).
-.PHONY: .check-env-vars .deps .pip-install docs tests build dev run update install-local run-local deploy help configure-credentials
+.PHONY: .check-env-vars .deps .pip-install docs tests build dev run update install-local run-local deploy help release configure-credentials
 .DEFAULT_GOAL := help
 
 IS_LINUX_OS := $(shell uname -s | grep -c Linux)
@@ -13,21 +13,24 @@ export PATH := ${HOME}/.local/bin:$(PATH)
 help:
 	@echo "Please use 'make <target>' where <target> is one of"
 	@echo ""
-	@echo "  build             builds the app in Docker"
-	@echo "  run               runs the app in Docker with prod settings"
-	@echo "  dev               runs the app in Docker with dev settings"
-	@echo "  run-local         runs the app locally with prod settings"
-	@echo "  run-local-sudo    runs the app locally using prod settings and root privileges"
-	@echo "  poetry-update     updates the dependencies in poetry.lock"
-	@echo "  install-local     installs slac into the current environment"
-	@echo "  set-credentials   sets the Switch PyPi credentials directly into pyroject.toml. Use this recipe with caution"
-	@echo "  tests             run all the tests"
-	@echo "  reformat          reformats the code, using Black"
-	@echo "  flake8            flakes8 the code"
-	@echo "  deploy            deploys the project using Poetry (not recommended, only use if really needed)"
+	@echo "  build                     builds the app in Docker"
+	@echo "  run                       runs the app in Docker with prod settings"
+	@echo "  dev                       runs the app in Docker with dev settings"
+	@echo "  run-local                 runs the app locally with prod settings"
+	@echo "  run-local-sudo            runs the app locally using prod settings and root privileges"
+	@echo "  poetry-update             updates the dependencies in poetry.lock"
+	@echo "  install-local             installs slac into the current environment"
+	@echo "  set-credentials           sets the Switch PyPi credentials directly into pyroject.toml. Use this recipe with caution"
+	@echo "  tests                     run all the tests"
+	@echo "  reformat                  reformats the code, using Black"
+	@echo "  flake8                    flakes8 the code"
+	@echo "  release version=<mj.mn.p> bumps the project version to <mj.mn.p>, using poetry;"
+	@echo "  deploy                    deploys the project using Poetry (not recommended, only use if really needed)"
 	@echo ""
 	@echo "Check the Makefile to know exactly what each target is doing."
 
+.install-poetry:
+	@if [ -z ${IS_POETRY} ]; then pip install poetry; fi
 
 .check-os:
 	# The @ is to surpress the output of the evaluation
@@ -98,8 +101,9 @@ flake8:
 
 code-quality: reformat mypy black flake8
 
-bump-version:
-	poetry version
+release: .install-poetry
+	@echo "Please remember to update the CHANGELOG.md, before tagging the release"
+	@poetry version ${version}
 
 deploy: .check-env-vars .deps build bump-version
 	poetry config repo.pypi-switch https://pypi.switch-ev.com/
