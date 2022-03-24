@@ -18,7 +18,6 @@ jobs:
     - name: Tries to get the tag version or branch name
       id: context
       run: |
-        echo ::set-output name=BRANCH_NAME::${GITHUB_REF#refs/heads/}
         echo ::set-output name=TAG_VERSION::${GITHUB_REF#refs/tags/}
 
     - name: Setup the Python Environment by installing Poetry
@@ -28,8 +27,9 @@ jobs:
       shell: bash
       run: |
         # TAG_VERSION can be also obtained with:
-        # poetry version $(git describe --tags --abbrev=0)
-        poetry version $TAG_VERSION
+        # $(git describe --tags --abbrev=0)
+        proj_version=$(poetry version -s)
+        if [ $proj_version != $TAG_VERSION ]; then echo "Version $proj_version, defined in pyproject.toml, does not match TAG $TAG_VERSION of this release"; exit 3; fi
         poetry config repo.pypi-switch https://pypi.switch-ev.com/
         poetry config http-basic.pypi-switch $PYPI_USER $PYPI_PASS
         poetry update

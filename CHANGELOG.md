@@ -5,6 +5,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Network interface extraction from cs parameters; Update of the code with mqtt version 0.18.1 by @tropxy in https://github.com/SwitchEV/slac/pull/10
+
+### Fixed
+
+- Fix set credentials by @tropxy in https://github.com/SwitchEV/slac/pull/8
+
 ## [0.4.0] - 2021-12-20
 
 ### Added
