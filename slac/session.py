@@ -456,7 +456,7 @@ class SlacEvseSession(SlacSession):
         # Which means, we can use a larger timeout (like 900 ms) so that
         # we receive all or mostly all of the sounds.
         # self.time_out_ms = start_atten_char.time_out * 100
-        self.time_out_ms = ATTEN_RESULTS_TIMEOUT * 100
+        self.time_out_ms = ATTEN_RESULTS_TIMEOUT
         self.forwarding_sta = start_atten_char.forwarding_sta
         logger.debug("CM_START_ATTEN_CHAR: Finished!")
 
