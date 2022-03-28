@@ -359,25 +359,23 @@ class SlacEvseSession(SlacSession):
                 timeout=self.config.slac_init_timeout,
             )
         except TimeoutError as e:
-            self.state = STATE_UNMATCHED
             logger.warning(f"Timeout waiting for CM_SLAC_PARM.REQ: {e}")
-            return
+            raise e
         try:
             ether_frame = EthernetHeader.from_bytes(data_rcvd)
             homeplug_frame = HomePlugHeader.from_bytes(data_rcvd)
             slac_parm_req = SlacParmReq.from_bytes(data_rcvd)
         except Exception as e:
-            self.state = STATE_UNMATCHED
             # TODO: PROPER Exception
             logger.exception(e, exc_info=True)
-            return
+            raise e
         if homeplug_frame.mm_type != CM_SLAC_PARM | MMTYPE_REQ:
-            logger.info(
+            logger.error(
                 f"MMTYPE {homeplug_frame.mm_type} does not correspond"
                 f"to the expected one CM_SLAC_PARM | MMTYPE_REQ"
             )
-            self.state = STATE_UNMATCHED
-            return
+            raise AttributeError(f"MMTYPE {homeplug_frame.mm_type} does not correspond"
+                                 f"to the expected one CM_SLAC_PARM | MMTYPE_REQ")
 
         # Saving SLAC_PARM_REQ parameters from EV
         self.application_type = slac_parm_req.application_type
@@ -425,9 +423,8 @@ class SlacEvseSession(SlacSession):
             homeplug_frame = HomePlugHeader.from_bytes(data_rcvd)
             start_atten_char = StartAtennChar.from_bytes(data_rcvd)
         except Exception as e:
-            self.state = STATE_UNMATCHED
             logger.exception(e, exc_info=True)
-            return
+            raise e
         if (
             self.application_type != start_atten_char.application_type
             or self.security_type != start_atten_char.security_type
@@ -435,10 +432,8 @@ class SlacEvseSession(SlacSession):
             or start_atten_char.resp_type != SLAC_RESP_TYPE
             or homeplug_frame.mm_type != CM_START_ATTEN_CHAR | MMTYPE_IND
         ):
-            self.state = STATE_UNMATCHED
             logger.exception(ValueError("Error in StartAttenChar"))
-            return
-            # raise ValueError("Error in StartAttenChar")
+            raise ValueError("Error in StartAttenChar")
 
         # As is stated in ISO15118-3, the EV will send 3 consecutive
         # CM_START_ATTEN_CHAR, regardless if the first one was correctly
@@ -579,11 +574,8 @@ class SlacEvseSession(SlacSession):
                 ether_frame = EthernetHeader.from_bytes(data_rcvd)
                 homeplug_frame = HomePlugHeader.from_bytes(data_rcvd)
             except Exception as e:
-                self.state = STATE_UNMATCHED
                 logger.exception(e, exc_info=True)
-                return
-                # raise TimeoutError(
-                #     "SLAC_TIMEOUT Expired; AttnChar Failed") from e
+                raise e
             if (
                 ether_frame.ether_type == ETH_TYPE_HPAV
                 and homeplug_frame.mmv == HOMEPLUG_MMV
@@ -645,10 +637,8 @@ class SlacEvseSession(SlacSession):
             homeplug_frame = HomePlugHeader.from_bytes(data_rcvd)
             atten_charac_response = AtennCharRsp.from_bytes(data_rcvd)
         except Exception as e:
-            self.state = STATE_UNMATCHED
             logger.exception(e, exc_info=True)
-            return
-            # raise TimeoutError("SLAC_TIMEOUT Expired; AttnChar Failed") from e
+            raise e
 
         if (
             ether_frame.ether_type != ETH_TYPE_HPAV
@@ -667,16 +657,12 @@ class SlacEvseSession(SlacSession):
                 "AttenChar Resp Failed, ether type or homeplug " "frame are incorrect."
             )
             logger.exception(e)
-            self.state = STATE_UNMATCHED
-            # raise ValueError("AttenChar Resp Failed, ether type or homeplug "
-            #                  "frame are incorrect.")
+            raise e
+
         if atten_charac_response.result != 0:
-            self.state = STATE_UNMATCHED
             e = ValueError("Atten Char Resp Failed: Atten Char Result " "is not 0x00")
             logger.exception(e)
-            return
-            # raise ValueError("Atten Char Resp Failed: Atten Char Result "
-            #                  "is not 0x00")
+            raise e
         logger.debug("CM_ATTEN_CHAR: Finished!")
 
     async def cm_slac_match(self):
@@ -698,9 +684,7 @@ class SlacEvseSession(SlacSession):
             slac_match_req = MatchReq.from_bytes(data_rcvd)
         except Exception as e:
             logger.exception(e, exc_info=True)
-            self.state = STATE_UNMATCHED
-            return
-            # raise ValueError("SLAC Match Failed") from e
+            raise ValueError("SLAC Match Failed") from e
 
         if (
             ether_frame.ether_type != ETH_TYPE_HPAV
