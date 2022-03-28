@@ -28,6 +28,11 @@ logger = logging.getLogger("main")
 
 @dataclass
 class SlacStatusPayload:
+    """
+    Dataclass to hold the SlacStatus Payload info
+    This class is here as it was missing from mqtt_api by the time this code
+    was implemented.
+    """
     evse_id: str
     status: SlacStatus
 
@@ -108,9 +113,9 @@ class SlacHandler(Mqtt):
                         evse_params.evse_id, evse_params.network_interface, self.config
                     )
                     await slac_session.evse_set_key()
-                except OSError as e:
+                except (OSError, asyncio.TimeoutError) as e:
                     logger.error(e(f"PLC chip initialization failed for "
-                                   f"interface {evse_params.network_interface}. \n "
+                                   f"interface {evse_params.network_interface}: {e}. \n"
                                    f"Please check your CS parameters. The CS Parameters"
                                    f"request will be resent in 5 secs"))
                     self.running_sessions.clear()
