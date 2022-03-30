@@ -76,7 +76,7 @@ poetry-update: poetry-config
 	poetry update
 
 install-local: .check-env-vars
-	pip install . --extra-index-url https://$PYPI_USER:$PYPI_PASS@pypi.switch-ev.com/simple
+	pip install . --extra-index-url https://${PYPI_USER}:${PYPI_PASS}@pypi.switch-ev.com/simple
 
 run-local:
 	python slac/main.py
