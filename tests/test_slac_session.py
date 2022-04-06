@@ -93,9 +93,7 @@ async def test_set_key(evse_slac_session, dummy_config, evse_mac):
     # so that during tests we dont wait so long
     evse_slac_session.send_frame = AsyncMock()
     with patch("slac.session.SLAC_SETTLE_TIME", 0.5):
-        with patch(
-            "slac.session.readeth", new=AsyncMock(return_value=key_cnf_frame)
-        ):
+        with patch("slac.session.readeth", new=AsyncMock(return_value=key_cnf_frame)):
             with patch("slac.session.urandom", new=Mock(return_value=QUALCOMM_NMK)):
                 data_rcvd = await evse_slac_session.evse_set_key()
 
