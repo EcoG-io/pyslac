@@ -113,15 +113,16 @@ class SlacHandler(Mqtt):
                         evse_params.evse_id, evse_params.network_interface, self.config
                     )
                     await slac_session.evse_set_key()
-                except (OSError, asyncio.TimeoutError) as e:
-                    logger.error(e(f"PLC chip initialization failed for "
-                                   f"interface {evse_params.network_interface}: {e}. \n"
-                                   f"Please check your CS parameters. The CS Parameters"
-                                   f"request will be resent in 5 secs"))
+                    self.running_sessions.append(slac_session)
+                except (OSError, TimeoutError, ValueError) as e:
+                    logger.error(f"PLC chip initialization failed for "
+                                 f"EVSE {evse_params.evse_id}, interface " 
+                                 f"{evse_params.network_interface}: {e}. \n"
+                                 f"Please check your CS parameters. The CS Parameters"
+                                 f"request will be resent in 5 secs")
                     self.running_sessions.clear()
                     await asyncio.sleep(5)
                     break
-                self.running_sessions.append(slac_session)
 
     @get_session
     @on(MessageName.CP_STATUS)

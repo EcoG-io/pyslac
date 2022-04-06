@@ -318,29 +318,31 @@ class SlacEvseSession(SlacSession):
         # Also think about including the send, rcv method as inner methods of
         # SetKeyReq. Maybe even create a class SetKey that handles both the
         # Send and the CNF of the message
-        payload_rcvd = send_recv_eth(
-            frame_to_send=frame_to_send,
-            rcv_frame_size=FramesSizes.CM_SET_KEY_CNF,
-            iface=self.iface,
-        )
-        if isawaitable(payload_rcvd):
-            payload_rcvd = await payload_rcvd
-
         try:
-            SetKeyCnf.from_bytes(payload_rcvd)
+            await self.send_frame(frame_to_send)
+            data_rcvd = await self.rcv_frame(
+                rcv_frame_size=FramesSizes.CM_SET_KEY_CNF,
+                timeout=Timers.SLAC_INIT_TIMEOUT,
+            )
+        except asyncio.TimeoutError as e:
+            raise TimeoutError("SetKey Timeout raised") from e
+        try:
+            SetKeyCnf.from_bytes(data_rcvd)
             self.nmk = nmk
             self.nid = nid
         except ValueError as e:
             logger.error(e)
-            logger.debug(
-                "SetKeyReq has failed, old NMK: %s and NID: %s apply",
-                self.nmk,
-                self.nid,
-            )
-            return payload_rcvd
+            if self.nmk and self.nid:
+                logger.debug(
+                    "SetKeyReq has failed, old NMK: %s and NID: %s apply",
+                    self.nmk,
+                    self.nid,
+                )
+            else:
+                raise ValueError("SetKeyCnf data parsing into the class failed") from e
+        logger.debug("Registering NMK and NID into the PLC node...")
         await asyncio.sleep(SLAC_SETTLE_TIME)
         logger.debug("CM_SET_KEY: Finished!")
-        return payload_rcvd
 
     async def evse_slac_parm(self) -> None:
         logger.debug("CM_SLAC_PARM: Started...")
