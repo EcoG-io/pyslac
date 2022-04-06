@@ -33,6 +33,7 @@ class SlacStatusPayload:
     This class is here as it was missing from mqtt_api by the time this code
     was implemented.
     """
+
     evse_id: str
     status: SlacStatus
 
@@ -87,9 +88,9 @@ class SlacHandler(Mqtt):
                     "network_interface": "eth0",
                     "connectors": [...],
 
-        If no answer is provided in 60s, a timeout occurs and the slac application stops.
-        If the Initialization of the Slac session based on the CS Parameters received
-        fails, the system restarts awaiting for the parameters after 5 secs.
+        If no answer is provided in 60s, a timeout occurs and the slac application
+        stops. If the Initialization of the Slac session based on the CS Parameters
+        received fails, the system restarts awaiting for the parameters after 5 secs.
 
         Note:
             The evse_id provided must be unique and is assumed to be associated to
@@ -102,7 +103,7 @@ class SlacHandler(Mqtt):
             )
 
             if cs_parameters.number_of_evses < 1 or (
-                    len(cs_parameters.parameters) != cs_parameters.number_of_evses
+                len(cs_parameters.parameters) != cs_parameters.number_of_evses
             ):
                 raise AttributeError("Number of evses provided is invalid.")
 
@@ -115,11 +116,13 @@ class SlacHandler(Mqtt):
                     await slac_session.evse_set_key()
                     self.running_sessions.append(slac_session)
                 except (OSError, TimeoutError, ValueError) as e:
-                    logger.error(f"PLC chip initialization failed for "
-                                 f"EVSE {evse_params.evse_id}, interface " 
-                                 f"{evse_params.network_interface}: {e}. \n"
-                                 f"Please check your CS parameters. The CS Parameters"
-                                 f"request will be resent in 5 secs")
+                    logger.error(
+                        f"PLC chip initialization failed for "
+                        f"EVSE {evse_params.evse_id}, interface "
+                        f"{evse_params.network_interface}: {e}. \n"
+                        f"Please check your CS parameters. The CS Parameters"
+                        f"request will be resent in 5 secs"
+                    )
                     self.running_sessions.clear()
                     await asyncio.sleep(5)
                     break
@@ -191,9 +194,11 @@ class SlacHandler(Mqtt):
                     await slac_session.atten_charac_routine()
                 except Exception as e:
                     slac_session.state = STATE_UNMATCHED
-                    logger.debug(f"Exception Occurred during Attenuation Charc Routine:"
-                                 f"{e} \n"
-                                 f"Number of retries left {number_of_retries}")
+                    logger.debug(
+                        f"Exception Occurred during Attenuation Charc Routine:"
+                        f"{e} \n"
+                        f"Number of retries left {number_of_retries}"
+                    )
             if slac_session.state == STATE_MATCHED:
                 logger.debug("PEV-EVSE MATCHED Successfully, Link Established")
                 while True:

@@ -32,7 +32,6 @@ from slac.enums import (
     STATE_MATCHED,
     STATE_MATCHING,
     STATE_UNMATCHED,
-    FramesSizes,
 )
 from slac.layer_2_headers import EthernetHeader, HomePlugHeader
 from slac.messages import AttenProfile  # MnbcSound,
@@ -92,22 +91,19 @@ async def test_set_key(evse_slac_session, dummy_config, evse_mac):
     )
     # This first patch is to change the original SETTLE_TIME of 10 sec
     # so that during tests we dont wait so long
+    evse_slac_session.send_frame = AsyncMock()
     with patch("slac.session.SLAC_SETTLE_TIME", 0.5):
         with patch(
-            "slac.session.send_recv_eth", new=AsyncMock(return_value=key_cnf_frame)
-        ) as send_rcv_patch:
+            "slac.session.readeth", new=AsyncMock(return_value=key_cnf_frame)
+        ):
             with patch("slac.session.urandom", new=Mock(return_value=QUALCOMM_NMK)):
-                payload_rcvd = await evse_slac_session.evse_set_key()
+                data_rcvd = await evse_slac_session.evse_set_key()
 
-                assert payload_rcvd == key_cnf_frame
+                assert data_rcvd == key_cnf_frame
 
                 # check that what was sent through the send_rcv command was the
                 # SetKey Request
-                send_rcv_patch.assert_called_with(
-                    frame_to_send=key_req_frame,
-                    rcv_frame_size=FramesSizes.CM_SET_KEY_CNF,
-                    iface=evse_slac_session.iface,
-                )
+                evse_slac_session.send_frame.assert_called_with(key_req_frame)
 
 
 @pytest.mark.asyncio
@@ -182,7 +178,7 @@ async def test_cm_start_atten_charac(evse_slac_session):
         await evse_slac_session.cm_start_atten_charac()
 
         assert evse_slac_session.num_expected_sounds == SLAC_MSOUNDS
-        assert evse_slac_session.time_out_ms == ATTEN_RESULTS_TIMEOUT * 100
+        assert evse_slac_session.time_out_ms == ATTEN_RESULTS_TIMEOUT
         assert evse_slac_session.forwarding_sta == PEV_MAC
 
 
@@ -299,9 +295,9 @@ async def test_cm_atten_charac(evse_slac_session, evse_mac):
         + atten_car_rsp.pack_big()
     )
     with patch("slac.session.readeth", new=AsyncMock(return_value=atten_car_rsp_frame)):
-        # with pytest.raises(ValueError):
-        await evse_slac_session.cm_atten_char()
-        assert evse_slac_session.state == STATE_UNMATCHED
+        with pytest.raises(ValueError):
+            await evse_slac_session.cm_atten_char()
+            assert evse_slac_session.state == STATE_UNMATCHED
 
     # Force an Error by changing the run_id
     atten_car_rsp.run_id = b"\xAA" * 8
@@ -311,9 +307,9 @@ async def test_cm_atten_charac(evse_slac_session, evse_mac):
         + atten_car_rsp.pack_big()
     )
     with patch("slac.session.readeth", new=AsyncMock(return_value=atten_car_rsp_frame)):
-        # with pytest.raises(ValueError):
-        await evse_slac_session.cm_atten_char()
-        assert evse_slac_session.state == STATE_UNMATCHED
+        with pytest.raises(ValueError):
+            await evse_slac_session.cm_atten_char()
+            assert evse_slac_session.state == STATE_UNMATCHED
 
 
 @pytest.mark.asyncio
