@@ -368,16 +368,16 @@ class SlacEvseSession(SlacSession):
                 raise e
             try:
                 ether_frame = EthernetHeader.from_bytes(data_rcvd)
+                homeplug_frame = HomePlugHeader.from_bytes(data_rcvd)
+                if homeplug_frame.mm_type != CM_SLAC_PARM | MMTYPE_REQ:
+                    logger.warning("Frame received is not CM_SLAC_PARM.REQ")
+                    logger.debug("Continue waiting for CM_SLAC_PARM.REQ...")
+                    continue
                 slac_parm_req = SlacParmReq.from_bytes(data_rcvd)
             except Exception as e:
                 # TODO: PROPER Exception
                 logger.exception(e, exc_info=True)
                 raise e
-            homeplug_frame = HomePlugHeader.from_bytes(data_rcvd)
-            if homeplug_frame.mm_type != CM_SLAC_PARM | MMTYPE_REQ:
-                logger.warning("Frame received is not CM_SLAC_PARM.REQ")
-                logger.debug("Continue waiting for CM_SLAC_PARM.REQ...")
-                continue
             break
 
         # Saving SLAC_PARM_REQ parameters from EV
@@ -424,16 +424,16 @@ class SlacEvseSession(SlacSession):
                     timeout=Timers.SLAC_REQ_TIMEOUT,
                 )
                 EthernetHeader.from_bytes(data_rcvd)
+                homeplug_frame = HomePlugHeader.from_bytes(data_rcvd)
+                if homeplug_frame.mm_type != CM_START_ATTEN_CHAR | MMTYPE_IND:
+                    logger.warning("Frame received is not CM_START_ATTEN_CHAR.IND")
+                    logger.debug("Continue waiting for CM_START_ATTEN_CHAR.IND...")
+                    continue
                 start_atten_char = StartAtennChar.from_bytes(data_rcvd)
             except Exception as e:
                 logger.exception(e, exc_info=True)
                 raise e
 
-            homeplug_frame = HomePlugHeader.from_bytes(data_rcvd)
-            if homeplug_frame.mm_type != CM_START_ATTEN_CHAR | MMTYPE_IND:
-                logger.warning("Frame received is not CM_START_ATTEN_CHAR.IND")
-                logger.debug("Continue waiting for CM_START_ATTEN_CHAR.IND...")
-                continue
             if (
                 self.application_type != start_atten_char.application_type
                 or self.security_type != start_atten_char.security_type
@@ -648,16 +648,15 @@ class SlacEvseSession(SlacSession):
                 )
                 logger.debug(f"Payload Received: \n {hexlify(data_rcvd)}")
                 ether_frame = EthernetHeader.from_bytes(data_rcvd)
+                homeplug_frame = HomePlugHeader.from_bytes(data_rcvd)
+                if homeplug_frame.mm_type != CM_ATTEN_CHAR | MMTYPE_RSP:
+                    logger.warning("Frame received is not CM_ATTEN_CHAR.RSP")
+                    logger.debug("Continue waiting for CM_ATTEN_CHAR.RSP...")
+                    continue
                 atten_charac_response = AtennCharRsp.from_bytes(data_rcvd)
             except Exception as e:
                 logger.exception(e, exc_info=True)
                 raise e
-
-            homeplug_frame = HomePlugHeader.from_bytes(data_rcvd)
-            if homeplug_frame.mm_type != CM_ATTEN_CHAR | MMTYPE_RSP:
-                logger.warning("Frame received is not CM_ATTEN_CHAR.RSP")
-                logger.debug("Continue waiting for CM_ATTEN_CHAR.RSP...")
-                continue
 
             if (
                 ether_frame.ether_type != ETH_TYPE_HPAV
@@ -702,16 +701,15 @@ class SlacEvseSession(SlacSession):
 
                 logger.debug(f"Payload Received: \n {hexlify(data_rcvd)}")
                 ether_frame = EthernetHeader.from_bytes(data_rcvd)
+                homeplug_frame = HomePlugHeader.from_bytes(data_rcvd)
+                if homeplug_frame.mm_type != CM_SLAC_MATCH | MMTYPE_REQ:
+                    logger.warning("Frame received is not CM_SLAC_MATCH.REQ")
+                    logger.debug("Continue waiting for CM_SLAC_MATCH.REQ...")
+                    continue
                 slac_match_req = MatchReq.from_bytes(data_rcvd)
             except Exception as e:
                 logger.exception(e, exc_info=True)
                 raise ValueError("SLAC Match Failed") from e
-
-            homeplug_frame = HomePlugHeader.from_bytes(data_rcvd)
-            if homeplug_frame.mm_type != CM_SLAC_MATCH | MMTYPE_REQ:
-                logger.warning("Frame received is not CM_SLAC_MATCH.REQ")
-                logger.debug("Continue waiting for CM_SLAC_MATCH.REQ...")
-                continue
 
             if (
                 ether_frame.ether_type != ETH_TYPE_HPAV
