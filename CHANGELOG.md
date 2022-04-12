@@ -5,6 +5,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2022-04-12
+
+### Changed
+
+- Message process retry after unexpected message arrival by @tropxy in https://github.com/SwitchEV/slac/pull/13
+
 ## [0.5.0] - 2022-03-24
 
 ### Changed
