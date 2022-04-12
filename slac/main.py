@@ -28,6 +28,12 @@ logger = logging.getLogger("main")
 
 @dataclass
 class SlacStatusPayload:
+    """
+    Dataclass to hold the SlacStatus Payload info
+    This class is here as it was missing from mqtt_api by the time this code
+    was implemented.
+    """
+
     evse_id: str
     status: SlacStatus
 
@@ -82,29 +88,44 @@ class SlacHandler(Mqtt):
                     "network_interface": "eth0",
                     "connectors": [...],
 
-        If no answer is provided in 60s, a timeout occurs and the slac application stops
+        If no answer is provided in 60s, a timeout occurs and the slac application
+        stops. If the Initialization of the Slac session based on the CS Parameters
+        received fails, the system restarts awaiting for the parameters after 5 secs.
 
         Note:
             The evse_id provided must be unique and is assumed to be associated to
             one and one only network_interface. This is important, as the 'evse_id' is
             used in subsequent messages as an identifier of the running session.
         """
-        cs_parameters: response.CsParametersPayload = await self.request(
-            topic=Topics.JOSEV_CS, payload=request.CsParametersPayload()
-        )
-
-        if cs_parameters.number_of_evses < 1 or (
-            len(cs_parameters.parameters) != cs_parameters.number_of_evses
-        ):
-            raise AttributeError("Number of evses provided is invalid.")
-
-        for evse_params in cs_parameters.parameters:
-            # Initialize the Slac Session
-            slac_session = SlacEvseSession(
-                evse_params.evse_id, evse_params.network_interface, self.config
+        while not self.running_sessions:
+            cs_parameters: response.CsParametersPayload = await self.request(
+                topic=Topics.JOSEV_CS, payload=request.CsParametersPayload()
             )
-            await slac_session.evse_set_key()
-            self.running_sessions.append(slac_session)
+
+            if cs_parameters.number_of_evses < 1 or (
+                len(cs_parameters.parameters) != cs_parameters.number_of_evses
+            ):
+                raise AttributeError("Number of evses provided is invalid.")
+
+            for evse_params in cs_parameters.parameters:
+                # Initialize the Slac Session
+                try:
+                    slac_session = SlacEvseSession(
+                        evse_params.evse_id, evse_params.network_interface, self.config
+                    )
+                    await slac_session.evse_set_key()
+                    self.running_sessions.append(slac_session)
+                except (OSError, TimeoutError, ValueError) as e:
+                    logger.error(
+                        f"PLC chip initialization failed for "
+                        f"EVSE {evse_params.evse_id}, interface "
+                        f"{evse_params.network_interface}: {e}. \n"
+                        f"Please check your CS parameters. The CS Parameters"
+                        f"request will be resent in 5 secs"
+                    )
+                    self.running_sessions.clear()
+                    await asyncio.sleep(5)
+                    break
 
     @get_session
     @on(MessageName.CP_STATUS)
@@ -146,7 +167,7 @@ class SlacHandler(Mqtt):
         self, slac_session: "SlacEvseSession", number_of_retries=3
     ) -> None:
         """
-        Task that is spawned once a state change is detected from A. E or F to
+        Task that is spawned once a state change is detected from A, E or F to
         B, C or D. This task is responsible to run the right methods defined in
         session.py, which as a whole comprise the SLAC protocol.
         In case SLAC fails, it retries up to 3 times to get a match, and
@@ -169,7 +190,15 @@ class SlacHandler(Mqtt):
                         slac_session.evse_id, SlacStatus.MATCHING
                     ),
                 )
-                await slac_session.atten_charac_routine()
+                try:
+                    await slac_session.atten_charac_routine()
+                except Exception as e:
+                    slac_session.state = STATE_UNMATCHED
+                    logger.debug(
+                        f"Exception Occurred during Attenuation Charc Routine:"
+                        f"{e} \n"
+                        f"Number of retries left {number_of_retries}"
+                    )
             if slac_session.state == STATE_MATCHED:
                 logger.debug("PEV-EVSE MATCHED Successfully, Link Established")
                 while True:

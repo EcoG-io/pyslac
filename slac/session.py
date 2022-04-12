@@ -21,6 +21,7 @@ from slac.enums import (
     MMTYPE_CNF,
     MMTYPE_IND,
     MMTYPE_REQ,
+    MMTYPE_RSP,
     SLAC_ATTEN_TIMEOUT,
     SLAC_GROUPS,
     SLAC_LIMIT,
@@ -271,7 +272,7 @@ class SlacEvseSession(SlacSession):
         await self.evse_set_key()
         self.reset()
 
-    async def evse_set_key(self):
+    async def evse_set_key(self) -> bytes:
         """
         PEV-HLE sets the NMK and NID on PEV-PLC using CM_SET_KEY.REQ;
         the NMK and NID must match those provided by EVSE-HLE using
@@ -318,66 +319,66 @@ class SlacEvseSession(SlacSession):
         # Also think about including the send, rcv method as inner methods of
         # SetKeyReq. Maybe even create a class SetKey that handles both the
         # Send and the CNF of the message
-        payload_rcvd = send_recv_eth(
-            frame_to_send=frame_to_send,
-            rcv_frame_size=FramesSizes.CM_SET_KEY_CNF,
-            iface=self.iface,
-        )
-        if isawaitable(payload_rcvd):
-            payload_rcvd = await payload_rcvd
-
         try:
-            SetKeyCnf.from_bytes(payload_rcvd)
+            await self.send_frame(frame_to_send)
+            data_rcvd = await self.rcv_frame(
+                rcv_frame_size=FramesSizes.CM_SET_KEY_CNF,
+                timeout=Timers.SLAC_INIT_TIMEOUT,
+            )
+        except asyncio.TimeoutError as e:
+            raise TimeoutError("SetKey Timeout raised") from e
+        try:
+            SetKeyCnf.from_bytes(data_rcvd)
             self.nmk = nmk
             self.nid = nid
         except ValueError as e:
             logger.error(e)
-            logger.debug(
-                "SetKeyReq has failed, old NMK: %s and NID: %s apply",
-                self.nmk,
-                self.nid,
-            )
-            return payload_rcvd
+            if self.nmk and self.nid:
+                logger.debug(
+                    "SetKeyReq has failed, old NMK: %s and NID: %s apply",
+                    self.nmk,
+                    self.nid,
+                )
+            else:
+                raise ValueError("SetKeyCnf data parsing into the class failed") from e
+        logger.debug("Registering NMK and NID into the PLC node...")
         await asyncio.sleep(SLAC_SETTLE_TIME)
         logger.debug("CM_SET_KEY: Finished!")
-        return payload_rcvd
+        return data_rcvd
 
     async def evse_slac_parm(self) -> None:
         logger.debug("CM_SLAC_PARM: Started...")
         # TODO: Pass the expected parameters later to the read function
         # so that it can be evaluated while the timeout hasnt elapsed
         self.reset_socket()
-        try:
-            # A complete CM_SLAC_PARM.REQ frame must have 60 Bytes:
-            # EthernetHeader = 14 bytes
-            # HomePlugHeader  = 5 bytes
-            # SlacParmReq = 10 bytes
-            # Padding = 31 bytes (The min ETH frame must have 60 bytes,
-            # it this frame requires padding)
-            data_rcvd = await self.rcv_frame(
-                rcv_frame_size=FramesSizes.CM_SLAC_PARM_REQ,
-                timeout=self.config.slac_init_timeout,
-            )
-        except TimeoutError as e:
-            self.state = STATE_UNMATCHED
-            logger.warning(f"Timeout waiting for CM_SLAC_PARM.REQ: {e}")
-            return
-        try:
-            ether_frame = EthernetHeader.from_bytes(data_rcvd)
-            homeplug_frame = HomePlugHeader.from_bytes(data_rcvd)
-            slac_parm_req = SlacParmReq.from_bytes(data_rcvd)
-        except Exception as e:
-            self.state = STATE_UNMATCHED
-            # TODO: PROPER Exception
-            logger.exception(e, exc_info=True)
-            return
-        if homeplug_frame.mm_type != CM_SLAC_PARM | MMTYPE_REQ:
-            logger.info(
-                f"MMTYPE {homeplug_frame.mm_type} does not correspond"
-                f"to the expected one CM_SLAC_PARM | MMTYPE_REQ"
-            )
-            self.state = STATE_UNMATCHED
-            return
+        while True:
+            try:
+                # A complete CM_SLAC_PARM.REQ frame must have 60 Bytes:
+                # EthernetHeader = 14 bytes
+                # HomePlugHeader  = 5 bytes
+                # SlacParmReq = 10 bytes
+                # Padding = 31 bytes (The min ETH frame must have 60 bytes,
+                # it this frame requires padding)
+                data_rcvd = await self.rcv_frame(
+                    rcv_frame_size=FramesSizes.CM_SLAC_PARM_REQ,
+                    timeout=self.config.slac_init_timeout,
+                )
+            except TimeoutError as e:
+                logger.warning(f"Timeout waiting for CM_SLAC_PARM.REQ: {e}")
+                raise e
+            try:
+                ether_frame = EthernetHeader.from_bytes(data_rcvd)
+                homeplug_frame = HomePlugHeader.from_bytes(data_rcvd)
+                if homeplug_frame.mm_type != CM_SLAC_PARM | MMTYPE_REQ:
+                    logger.warning("Frame received is not CM_SLAC_PARM.REQ")
+                    logger.debug("Continue waiting for CM_SLAC_PARM.REQ...")
+                    continue
+                slac_parm_req = SlacParmReq.from_bytes(data_rcvd)
+            except Exception as e:
+                # TODO: PROPER Exception
+                logger.exception(e, exc_info=True)
+                raise e
+            break
 
         # Saving SLAC_PARM_REQ parameters from EV
         self.application_type = slac_parm_req.application_type
@@ -410,35 +411,38 @@ class SlacEvseSession(SlacSession):
 
     async def cm_start_atten_charac(self):
         logger.debug("CM_START_ATTEN_CHAR: Started...")
-        try:
-            # A complete CM_START_ATTEN_CHAR.IND frame must have 60 Bytes:
-            # EthernetHeader = 14 bytes
-            # HomePlugHeader  = 5 bytes
-            # StartAtennChar = 19 bytes
-            # Padding = 22 bytes (The min ETH frame must have 60 bytes,
-            # it this frame requires padding)
-            data_rcvd = await self.rcv_frame(
-                rcv_frame_size=FramesSizes.CM_START_ATTEN_CHAR_IND,
-                timeout=Timers.SLAC_REQ_TIMEOUT,
-            )
-            EthernetHeader.from_bytes(data_rcvd)
-            homeplug_frame = HomePlugHeader.from_bytes(data_rcvd)
-            start_atten_char = StartAtennChar.from_bytes(data_rcvd)
-        except Exception as e:
-            self.state = STATE_UNMATCHED
-            logger.exception(e, exc_info=True)
-            return
-        if (
-            self.application_type != start_atten_char.application_type
-            or self.security_type != start_atten_char.security_type
-            or self.run_id != start_atten_char.run_id
-            or start_atten_char.resp_type != SLAC_RESP_TYPE
-            or homeplug_frame.mm_type != CM_START_ATTEN_CHAR | MMTYPE_IND
-        ):
-            self.state = STATE_UNMATCHED
-            logger.exception(ValueError("Error in StartAttenChar"))
-            return
-            # raise ValueError("Error in StartAttenChar")
+        while True:
+            try:
+                # A complete CM_START_ATTEN_CHAR.IND frame must have 60 Bytes:
+                # EthernetHeader = 14 bytes
+                # HomePlugHeader  = 5 bytes
+                # StartAtennChar = 19 bytes
+                # Padding = 22 bytes (The min ETH frame must have 60 bytes,
+                # it this frame requires padding)
+                data_rcvd = await self.rcv_frame(
+                    rcv_frame_size=FramesSizes.CM_START_ATTEN_CHAR_IND,
+                    timeout=Timers.SLAC_REQ_TIMEOUT,
+                )
+                EthernetHeader.from_bytes(data_rcvd)
+                homeplug_frame = HomePlugHeader.from_bytes(data_rcvd)
+                if homeplug_frame.mm_type != CM_START_ATTEN_CHAR | MMTYPE_IND:
+                    logger.warning("Frame received is not CM_START_ATTEN_CHAR.IND")
+                    logger.debug("Continue waiting for CM_START_ATTEN_CHAR.IND...")
+                    continue
+                start_atten_char = StartAtennChar.from_bytes(data_rcvd)
+            except Exception as e:
+                logger.exception(e, exc_info=True)
+                raise e
+
+            if (
+                self.application_type != start_atten_char.application_type
+                or self.security_type != start_atten_char.security_type
+                or self.run_id != start_atten_char.run_id
+                or start_atten_char.resp_type != SLAC_RESP_TYPE
+            ):
+                logger.exception(ValueError("Error in StartAttenChar"))
+                raise ValueError("Error in StartAttenChar")
+            break
 
         # As is stated in ISO15118-3, the EV will send 3 consecutive
         # CM_START_ATTEN_CHAR, regardless if the first one was correctly
@@ -461,7 +465,7 @@ class SlacEvseSession(SlacSession):
         # Which means, we can use a larger timeout (like 900 ms) so that
         # we receive all or mostly all of the sounds.
         # self.time_out_ms = start_atten_char.time_out * 100
-        self.time_out_ms = ATTEN_RESULTS_TIMEOUT * 100
+        self.time_out_ms = ATTEN_RESULTS_TIMEOUT
         self.forwarding_sta = start_atten_char.forwarding_sta
         logger.debug("CM_START_ATTEN_CHAR: Finished!")
 
@@ -567,11 +571,11 @@ class SlacEvseSession(SlacSession):
         # We receive in an alternated way the messages
         # CM_MNBC_SOUND.IND and CM_ATTEN_PROFILE.IND and the first
         # message is always a CM_MNBC_SOUND.IND
-        next_frame_expected: int = FramesSizes.CM_MNBC_SOUND_IND
+        next_frame_size: int = FramesSizes.CM_MNBC_SOUND_IND
         while True:
             try:
                 data_rcvd = await self.rcv_frame(
-                    rcv_frame_size=next_frame_expected,
+                    rcv_frame_size=next_frame_size,
                     # The SLAC_REQ_TIMEOUT used seems to not be enough for the
                     # PLC chip to send a sound, so we use 1 sec instead
                     timeout=1,
@@ -579,18 +583,19 @@ class SlacEvseSession(SlacSession):
                 ether_frame = EthernetHeader.from_bytes(data_rcvd)
                 homeplug_frame = HomePlugHeader.from_bytes(data_rcvd)
             except Exception as e:
-                self.state = STATE_UNMATCHED
                 logger.exception(e, exc_info=True)
-                return
-                # raise TimeoutError(
-                #     "SLAC_TIMEOUT Expired; AttnChar Failed") from e
+                raise e
             if (
                 ether_frame.ether_type == ETH_TYPE_HPAV
                 and homeplug_frame.mmv == HOMEPLUG_MMV
             ):
-                next_frame_expected = self.process_sound_frame(
-                    homeplug_frame, ether_frame, data_rcvd, sounds_rcvd, aag
-                )
+                if homeplug_frame.mm_type in [
+                    CM_ATTEN_PROFILE | MMTYPE_IND,
+                    CM_MNBC_SOUND | MMTYPE_IND,
+                ]:
+                    next_frame_size = self.process_sound_frame(
+                        homeplug_frame, ether_frame, data_rcvd, sounds_rcvd, aag
+                    )
 
                 # Check for a timeout of a reception of the expected sounds
                 time_elapsed = time_now_ms() - time_start
@@ -629,102 +634,109 @@ class SlacEvseSession(SlacSession):
         )
 
         await self.send_frame(frame_to_send)
-        try:
-            # A complete CM_ATTEN_CHAR.RSP frame must have 70 Bytes:
-            # EthernetHeader = 14 bytes
-            # HomePlugHeader  = 5 bytes
-            # AttenCharRsp = 51 bytes
-            data_rcvd = await self.rcv_frame(
-                rcv_frame_size=FramesSizes.CM_ATTEN_CHAR_RSP,
-                # The SLAC_RESP_TIMEOUT used seems to not be enough for the
-                # PLC chip to send a sound, so we use 1 sec instead
-                timeout=1,
-            )
-            logger.debug(f"Payload Received: \n {hexlify(data_rcvd)}")
-            ether_frame = EthernetHeader.from_bytes(data_rcvd)
-            homeplug_frame = HomePlugHeader.from_bytes(data_rcvd)
-            atten_charac_response = AtennCharRsp.from_bytes(data_rcvd)
-        except Exception as e:
-            self.state = STATE_UNMATCHED
-            logger.exception(e, exc_info=True)
-            return
-            # raise TimeoutError("SLAC_TIMEOUT Expired; AttnChar Failed") from e
+        while True:
+            try:
+                # A complete CM_ATTEN_CHAR.RSP frame must have 70 Bytes:
+                # EthernetHeader = 14 bytes
+                # HomePlugHeader  = 5 bytes
+                # AttenCharRsp = 51 bytes
+                data_rcvd = await self.rcv_frame(
+                    rcv_frame_size=FramesSizes.CM_ATTEN_CHAR_RSP,
+                    # The SLAC_RESP_TIMEOUT used seems to not be enough for the
+                    # PLC chip to send a sound, so we use 1 sec instead
+                    timeout=1,
+                )
+                logger.debug(f"Payload Received: \n {hexlify(data_rcvd)}")
+                ether_frame = EthernetHeader.from_bytes(data_rcvd)
+                homeplug_frame = HomePlugHeader.from_bytes(data_rcvd)
+                if homeplug_frame.mm_type != CM_ATTEN_CHAR | MMTYPE_RSP:
+                    logger.warning("Frame received is not CM_ATTEN_CHAR.RSP")
+                    logger.debug("Continue waiting for CM_ATTEN_CHAR.RSP...")
+                    continue
+                atten_charac_response = AtennCharRsp.from_bytes(data_rcvd)
+            except Exception as e:
+                logger.exception(e, exc_info=True)
+                raise e
 
-        if (
-            ether_frame.ether_type != ETH_TYPE_HPAV
-            or homeplug_frame.mmv != HOMEPLUG_MMV
-            or self.run_id != atten_charac_response.run_id
-        ):
-            # TODO: add __str__ or __repr__ methods to the classes
-            # for a neat printing
-            logger.exception(ether_frame)
-            logger.exception(homeplug_frame)
-            logger.exception(atten_charac_response)
-            # TODO: Check if we shall raise an Error or just ignore
-            # According with [V2G3-A09-47] from ISO15118-3, it shall just be
-            # ignored
-            e = ValueError(
-                "AttenChar Resp Failed, ether type or homeplug " "frame are incorrect."
-            )
-            logger.exception(e)
-            self.state = STATE_UNMATCHED
-            # raise ValueError("AttenChar Resp Failed, ether type or homeplug "
-            #                  "frame are incorrect.")
+            if (
+                ether_frame.ether_type != ETH_TYPE_HPAV
+                or homeplug_frame.mmv != HOMEPLUG_MMV
+                or self.run_id != atten_charac_response.run_id
+            ):
+                # TODO: add __str__ or __repr__ methods to the classes
+                # for a neat printing
+                logger.exception(ether_frame)
+                logger.exception(homeplug_frame)
+                logger.exception(atten_charac_response)
+                # TODO: Check if we shall raise an Error or just ignore
+                # According with [V2G3-A09-47] from ISO15118-3, it shall just be
+                # ignored
+                e = ValueError(
+                    "AttenChar Resp Failed, ether type or homeplug "
+                    "frame are incorrect."
+                )
+                logger.exception(e)
+                raise e
+            break
+
         if atten_charac_response.result != 0:
-            self.state = STATE_UNMATCHED
             e = ValueError("Atten Char Resp Failed: Atten Char Result " "is not 0x00")
             logger.exception(e)
-            return
-            # raise ValueError("Atten Char Resp Failed: Atten Char Result "
-            #                  "is not 0x00")
+            raise e
         logger.debug("CM_ATTEN_CHAR: Finished!")
 
     async def cm_slac_match(self):
         logger.debug("CM_SLAC_MATCH: Started...")
         # Await for a CM_SLAC_MATCH.REQ from EV
-        try:
-            # A complete CM_SLAC_MATCH.REQ frame must have 85 Bytes:
-            # EthernetHeader = 14 bytes
-            # HomePlugHeader  = 5 bytes
-            # AttenCharRsp = 66 bytes
-            data_rcvd = await self.rcv_frame(
-                rcv_frame_size=FramesSizes.CM_SLAC_MATCH_REQ,
-                timeout=Timers.SLAC_MATCH_TIMEOUT,
-            )
+        while True:
+            try:
+                # A complete CM_SLAC_MATCH.REQ frame must have 85 Bytes:
+                # EthernetHeader = 14 bytes
+                # HomePlugHeader  = 5 bytes
+                # AttenCharRsp = 66 bytes
+                data_rcvd = await self.rcv_frame(
+                    rcv_frame_size=FramesSizes.CM_SLAC_MATCH_REQ,
+                    timeout=Timers.SLAC_MATCH_TIMEOUT,
+                )
 
-            logger.debug(f"Payload Received: \n {hexlify(data_rcvd)}")
-            ether_frame = EthernetHeader.from_bytes(data_rcvd)
-            homeplug_frame = HomePlugHeader.from_bytes(data_rcvd)
-            slac_match_req = MatchReq.from_bytes(data_rcvd)
-        except Exception as e:
-            logger.exception(e, exc_info=True)
-            self.state = STATE_UNMATCHED
-            return
-            # raise ValueError("SLAC Match Failed") from e
+                logger.debug(f"Payload Received: \n {hexlify(data_rcvd)}")
+                ether_frame = EthernetHeader.from_bytes(data_rcvd)
+                homeplug_frame = HomePlugHeader.from_bytes(data_rcvd)
+                if homeplug_frame.mm_type != CM_SLAC_MATCH | MMTYPE_REQ:
+                    logger.warning("Frame received is not CM_SLAC_MATCH.REQ")
+                    logger.debug("Continue waiting for CM_SLAC_MATCH.REQ...")
+                    continue
+                slac_match_req = MatchReq.from_bytes(data_rcvd)
+            except Exception as e:
+                logger.exception(e, exc_info=True)
+                raise ValueError("SLAC Match Failed") from e
 
-        if (
-            ether_frame.ether_type != ETH_TYPE_HPAV
-            or homeplug_frame.mmv != HOMEPLUG_MMV
-            or homeplug_frame.mm_type != CM_SLAC_MATCH | MMTYPE_REQ
-            or slac_match_req.run_id != self.run_id
-        ):
-            # TODO: add __str__ or __repr__ methods to the classes
-            # for a neat printing
-            logger.debug(
-                f"ether_type: {ether_frame.ether_type} \n" f"Expected: {ETH_TYPE_HPAV}"
-            )
-            logger.debug(f"MMV: {homeplug_frame.mmv} \n " f"Expected: {HOMEPLUG_MMV}")
-            logger.debug(
-                f"MMType: {homeplug_frame.mm_type} \n "
-                f"Expected: {CM_SLAC_MATCH | MMTYPE_REQ}"
-            )
-            logger.debug(
-                f"RunId: {slac_match_req.run_id} \n " f"Expected: {self.run_id}"
-            )
-            # TODO: Check if we shall raise an Error or just ignore
-            # according with requirement [V2G3-A09-98] from ISO15118-3
-            # it shall be ignored
-            raise ValueError("SLAC Match Request Failed")
+            if (
+                ether_frame.ether_type != ETH_TYPE_HPAV
+                or homeplug_frame.mmv != HOMEPLUG_MMV
+                or slac_match_req.run_id != self.run_id
+            ):
+                # TODO: add __str__ or __repr__ methods to the classes
+                # for a neat printing
+                logger.debug(
+                    f"ether_type: {ether_frame.ether_type} \n"
+                    f"Expected: {ETH_TYPE_HPAV}"
+                )
+                logger.debug(
+                    f"MMV: {homeplug_frame.mmv} \n " f"Expected: {HOMEPLUG_MMV}"
+                )
+                logger.debug(
+                    f"MMType: {homeplug_frame.mm_type} \n "
+                    f"Expected: {CM_SLAC_MATCH | MMTYPE_REQ}"
+                )
+                logger.debug(
+                    f"RunId: {slac_match_req.run_id} \n " f"Expected: {self.run_id}"
+                )
+                # TODO: Check if we shall raise an Error or just ignore
+                # according with requirement [V2G3-A09-98] from ISO15118-3
+                # it shall be ignored
+                raise ValueError("SLAC Match Request Failed")
+            break
 
         self.pev_id = slac_match_req.pev_id
         self.pev_mac = slac_match_req.pev_mac
