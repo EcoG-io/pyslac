@@ -8,6 +8,8 @@ authors = ["André Duarte <andre@switch-ev.com, andre14x@gmail.com>"]
 python = "^3.9"
 environs = "^9.5.0"
 mqtt-api = { version = "^0.18.1", source = "pypi-switch"}
+aiofile = "^3.7.4"
+dacite = "^1.6.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.1"

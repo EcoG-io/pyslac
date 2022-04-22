@@ -3,15 +3,20 @@ from slac.utils import is_distro_linux
 if not is_distro_linux():
     raise EnvironmentError("Non-Linux systems are not supported")
 
-
 import asyncio
 import functools
+import json
 import logging
+import dacite
+from aiofile import async_open
+from enum import Enum
 from dataclasses import dataclass
 from inspect import isawaitable
 from typing import Any, List, Optional, Set
 
+
 from asyncio_mqtt.client import Client
+from dacite import from_dict
 from mqtt_api.mqtt import Mqtt
 from mqtt_api.routing import on
 from mqtt_api.v1 import request, response
@@ -70,6 +75,36 @@ class SlacHandler(Mqtt):
         self.running_tasks: Set[asyncio.Task] = set()
         self.running_sessions: List["SlacEvseSession"] = []
 
+    async def _get_cs_parameters(self):
+        cs_parameters: response.CsParametersPayload = await self.request(
+            topic=Topics.JOSEV_CS, payload=request.CsParametersPayload()
+        )
+
+        if cs_parameters.number_of_evses < 1 or (
+            len(cs_parameters.parameters) != cs_parameters.number_of_evses
+        ):
+            raise AttributeError("Number of evses provided is invalid.")
+        return cs_parameters.parameters
+
+    async def get_cs_configuration(self):
+        """
+        tries to read configuration from file, if it fails
+        it will ask for cs_parameters to mqtt
+        """
+        try:
+            async with async_open(self.config.cs_parameter_file_path, "r") as f:
+                json_content = await f.read()
+                data = json.loads(json_content)
+                cs_parameters = from_dict(
+                    data_class=response.CsParametersPayload, data=data,
+                    config=dacite.Config(cast=[Enum]),
+                )
+        except Exception as e:
+            logger.info(str(e))
+            logger.info("Getting parameters through MQTT cs_parameters request")
+            cs_parameters = await self._get_cs_parameters()
+        return cs_parameters.parameters
+
     async def get_cs_parameters(self):
         """
         Task to request the cs_parameters of the station.
@@ -98,16 +133,9 @@ class SlacHandler(Mqtt):
             used in subsequent messages as an identifier of the running session.
         """
         while not self.running_sessions:
-            cs_parameters: response.CsParametersPayload = await self.request(
-                topic=Topics.JOSEV_CS, payload=request.CsParametersPayload()
-            )
 
-            if cs_parameters.number_of_evses < 1 or (
-                len(cs_parameters.parameters) != cs_parameters.number_of_evses
-            ):
-                raise AttributeError("Number of evses provided is invalid.")
-
-            for evse_params in cs_parameters.parameters:
+            configuration = await self.get_cs_configuration()
+            for evse_params in configuration:
                 # Initialize the Slac Session
                 try:
                     slac_session = SlacEvseSession(

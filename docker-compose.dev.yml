@@ -2,3 +2,5 @@ version: '3.8'
 services:
   slac:
     env_file: .env.dev.docker
+    volumes:
+      - .:/etc/json

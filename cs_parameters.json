@@ -1,0 +1,96 @@
+{
+	"sw_version": "v1.0.1",
+	"hw_version": "v2.0.0",
+	"number_of_evses": 2,
+	"parameters": [{
+			"evse_id": "DE*SWT*E123456789",
+			"connectors": [{
+					"id": 1,
+					"services": {
+						"ac": {
+							"connector_type": "AC_three_phase_core",
+							"control_mode": "??",
+							"nominal_voltage": 230,
+							"mobility_needs": "??",
+							"pricing": "??",
+							"free_service": true
+						},
+						"dc": {
+							"connector_type": "DC_core",
+							"control_mode": "??",
+							"mobility_needs": "??",
+							"pricing": "??"
+						},
+						"ac_bpt": {
+							"connector_type": "AC_three_phase_core",
+							"control_mode": "??",
+							"nominal_voltage": 230,
+							"mobility_needs": "??",
+							"pricing": "??",
+							"bpt_channel": "unified",
+							"generator_mode": "grid_following",
+							"grid_island_detection_mode": "active",
+							"free_service": false
+						}
+					}
+				},
+				{
+					"id": 2,
+					"services": {
+						"dc": {
+							"connector_type": "DC_core",
+							"control_mode": "??",
+							"mobility_needs": "??",
+							"pricing": "??"
+						},
+						"dc_bpt": {
+							"connector_type": "DC_core",
+							"control_mode": "??",
+							"mobility_needs": "??",
+							"pricing": "??",
+							"bpt_channel": "unified",
+							"generator_mode": "grid_following",
+							"free_service": false
+						}
+					}
+				}
+			],
+			"supports_eim": true,
+			"network_interface": "eth1"
+		},
+		{
+			"evse_id": "DE*SWT*E123456790",
+			"connectors": [{
+				"id": 1,
+				"services": {
+					"ac": {
+						"connector_type": "AC_three_phase_core",
+						"control_mode": "??",
+						"nominal_voltage": 230,
+						"mobility_needs": "??",
+						"pricing": "??",
+						"free_service": true
+					},
+					"dc": {
+						"connector_type": "DC_core",
+						"control_mode": "??",
+						"mobility_needs": "??",
+						"pricing": "??"
+					},
+					"ac_bpt": {
+						"connector_type": "AC_three_phase_core",
+						"control_mode": "??",
+						"nominal_voltage": 230,
+						"mobility_needs": "??",
+						"pricing": "??",
+						"bpt_channel": "unified",
+						"generator_mode": "grid_following",
+						"free_service": false
+					}
+				}
+			}],
+			"supports_eim": false,
+			"network_interface": "eth2"
+		}
+	]
+}

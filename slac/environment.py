@@ -16,6 +16,7 @@ class Config:
     mqtt_port: Optional[int] = None
     slac_init_timeout: Optional[int] = None
     log_level: Optional[int] = None
+    cs_parameter_file_path: Optional[str] = None
 
     def load_envs(self, env_path: Optional[str] = None) -> None:
         """
@@ -39,5 +40,5 @@ class Config:
         )
 
         self.log_level = env.str("LOG_LEVEL", default="INFO")
-
+        self.cs_parameter_file_path = env.str("CS_PARAMETERS_FILE")
         env.seal()  # raise all errors at once, if any
