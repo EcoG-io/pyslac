@@ -29,9 +29,7 @@ class SlacHandler(SlacSessionController):
     async def start(self, evse_id: str, network_interface: str):
         while not self.running_sessions:
             try:
-                slac_session = SlacEvseSession(
-                    evse_id, network_interface, self.config
-                )
+                slac_session = SlacEvseSession(evse_id, network_interface, self.config)
                 await slac_session.evse_set_key()
                 self.running_sessions.append(slac_session)
             except (OSError, TimeoutError, ValueError) as e:

@@ -59,9 +59,9 @@ from slac.sockets.async_linux_socket import (
     send_recv_eth,
     sendeth,
 )
-from slac.utils import generate_nid, get_if_hwaddr
+from slac.utils import cancel_task, generate_nid, get_if_hwaddr
 from slac.utils import half_round as hw
-from slac.utils import time_now_ms, cancel_task
+from slac.utils import time_now_ms
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("slac_session")
@@ -869,7 +869,7 @@ class SlacSessionController:
             )
 
     async def start_matching(
-            self, slac_session: "SlacEvseSession", number_of_retries=3
+        self, slac_session: "SlacEvseSession", number_of_retries=3
     ) -> None:
         """
         Task that is spawned once a state change is detected from A, E or F to

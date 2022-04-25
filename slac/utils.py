@@ -9,7 +9,6 @@ from math import copysign
 from sys import platform
 from typing import Any, Awaitable, List
 
-
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("slac_utils")
 
