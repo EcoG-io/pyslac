@@ -4,14 +4,14 @@ Python Implementation of the SLAC Protocol as specified by ISO15118-3 [^1]
 
 ## How to fire it up :fire:
 
-Slac main.py file lives under the `slac`directory. The project depends on an
-installation of slac as a module in your current environment and dependencies
-management is handled by `Poetry`.
+Slac main.py file lives under the `slac` directory. The project depends on an
+installation of slac as a module in your current environment. Dependencies
+management are handled by `Poetry`.
 
 > Dependencies:
 >
 > - Poetry [^2]
-> - Python >= 3.7
+> - Python >= 3.9
 
 There are two recommended ways of running the project:
 
@@ -30,50 +30,17 @@ There are two recommended ways of running the project:
    $ make run-local
    ```
 
-For a successful dependencies installation, you will need to provide the
-credentials to the Switch PyPi private server:
-
-   ```shell
-   $ export PYPI_USER=****
-   $ export PYPI_PASS=****
-   ```
-Contact André <andre@switch-ev.com> if you have questions about it.
-
 In order to start the SLAC session, it is required to provide some information
 like the network intarface(s) where the Power Line Communication is associated to.
-That information is exchanged through Switch's proprietary API, which is a
-request/response/update API based on the pub/sub philosophy adopted by MQTT.
 
 
-1. First step is to send the `cs_parameters` message containing all the available
-network interfaces and also the associated `evse_id`
-2. After that, it is required to send the message `cp_status` which contains the
-status of the Control Pilot line.
-
-Thus, in order to force the algorithm to listen for SLAC frames, we need a
-MQTT broker and a client that sends a message notifying the Control Pilot state;
-This is demonstrated in the following snippet, where it is assumed we are using
-a public available broker from HiveMQ with no authorization settings.
-
-```python
-async with Client("broker.hivemq.com") as client:
-    message = {"id": 2, "name": "cp_status", "type": "update",
-               "data": {"evse_id": "DE-SWT-E123456789", "state": "B1"}}
-    await client.publish("slac/cs", payload=json.dumps(message), qos=2, retain=False)
-```
-
-For more information about the MQTT API used by Switch check the following link:
-https://app.gitbook.com/@switch-ev/s/josev-api/
-
-Finally, the project includes a few configuration variables, whose default
+The project includes a few configuration variables, whose default
 values can be modified by setting them as environmental variables.
 The following table provides a few of the available variables:
 
 | ENV               | Default Value         | Description                                                                    |
 | ----------------- | --------------------- | ------------------------------------------------------------------------------ |
-| SLAC_INIT_TIMEOUT | `50`                  | Timeout[s] for the reception of the first slac message after state B detection |
-| MQTT_HOST         | No Default            | MQTT Broker URL                                                                |
-| MQTT_PORT         | No Default            | MQTT Broker Port                                                               |
+| SLAC_INIT_TIMEOUT | `50`                  | Timeout[s] for the reception of the first slac message after state B detection | |
 | LOG_LEVEL         | `INFO`                | Level of the Python log service                                                |
 
 
@@ -106,24 +73,7 @@ Any of those variables can also be set by exporting their value in the env:
 
 ## Known Issues and Limitation
 
-1. `make install-local`or `make poetry-update` may fail, depending on your system.
-   Poetry relies on the `Keyring` of your system and, unfortunately, this can create
-   problems. The common outcome is that Poetry won't authenticate against the
-   Switch private PyPi server:
-   ```shell
-   RepositoryError
-       403 Client Error: Forbidden for url: https://pypi.switch-ev.com/simple/flake8/
-   ```
-   There are two possible solutions:
-   1. Explicitly inject the credentials into pyproject.toml
-      For that you can use the following command:
-      `$ make set-credentials`
-   2. Disable your Keyring for Python, following the steps on this page:
-      https://blog.frank-mich.com/python-poetry-1-0-0-private-repo-issue-fix/
-
-   If you follow one of the above steps, the installation shall run smoothly.
-
-2. `make run-local` may not work in your system
+1`make run-local` may not work in your system
 
    SLAC requires the use of Level 2 frames, as so, the app requires low level access to
    the socket interface. Such level of access is only attained with root priviliges, so
@@ -146,8 +96,8 @@ To start the test, you may need root privileges and to start in the following
 order:
 
 ```bash
-$ sudo python slac/main.py
-$ sudo python slac/examples/ev_slac_scapy.py
+$ sudo $(shell which python) slac/main.py
+$ sudo $(shell which python) slac/examples/ev_slac_scapy.py
 ```
 
 This integration test was tested under:

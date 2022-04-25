@@ -4,7 +4,4 @@ services:
     hostname: slac
     build:
       context: .
-      args:
-        - PYPI_USER=${PYPI_USER}
-        - PYPI_PASS=${PYPI_PASS}
       dockerfile: Dockerfile

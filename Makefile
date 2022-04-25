@@ -20,12 +20,10 @@ help:
 	@echo "  run-local-sudo            runs the app locally using prod settings and root privileges"
 	@echo "  poetry-update             updates the dependencies in poetry.lock"
 	@echo "  install-local             installs slac into the current environment"
-	@echo "  set-credentials           sets the Switch PyPi credentials directly into pyroject.toml. Use this recipe with caution"
 	@echo "  tests                     run all the tests"
 	@echo "  reformat                  reformats the code, using Black"
 	@echo "  flake8                    flakes8 the code"
 	@echo "  release version=<mj.mn.p> bumps the project version to <mj.mn.p>, using poetry;"
-	@echo "  deploy                    deploys the project using Poetry (not recommended, only use if really needed)"
 	@echo ""
 	@echo "Check the Makefile to know exactly what each target is doing."
 
@@ -35,10 +33,6 @@ help:
 .check-os:
 	# The @ is to surpress the output of the evaluation
 	@if [ ${IS_LINUX_OS} -eq 0 ]; then echo "This Recipe is not available in non-Linux Systems"; exit 3; fi
-
-.check-env-vars:
-	@test $${PYPI_USER?Please set environment variable PYPI_USER}
-	@test $${PYPI_PASS?Please set environment variable PYPI_PASS}
 
 .deps:
 	@if [ -z ${IS_POETRY} ]; then pip install poetry; fi
@@ -50,33 +44,21 @@ docs:
 tests: .check-os
 	poetry run pytest -vv tests
 
-build: .check-env-vars
+build:
 	docker-compose build
 
-dev: .check-env-vars
+dev:
     # the dev file apply changes to the original compose file
 	docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
 
-run: .check-env-vars
+run:
 	docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
 
-poetry-config: .check-env-vars
-	@# For external packages, poetry saves metadata
-	@# in it's cache which can raise versioning problems, if the package
-	@# suffered version support changes. Thus, we clean poetry cache
-	yes | poetry cache clear --all mqtt_api
-	poetry config http-basic.pypi-switch ${PYPI_USER} ${PYPI_PASS}
-
-set-credentials: .check-env-vars
-	@# Due to a Keyring issue under Ubuntu systems, the password configuration does not work as expected: https://github.com/python-poetry/poetry/issues/4902
-	@# As so, instead we use sed to substitute the credentials.
-	sed -i.bkp "s@https://pypi.switch-ev.com/simple/@https://${PYPI_USER}:${PYPI_PASS}\@pypi.switch-ev.com/simple/@g" pyproject.toml
-
-poetry-update: poetry-config
+poetry-update:
 	poetry update
 
 install-local: .check-env-vars
-	pip install . --extra-index-url https://${PYPI_USER}:${PYPI_PASS}@pypi.switch-ev.com/simple
+	pip install .
 
 run-local:
 	python slac/main.py
@@ -105,7 +87,3 @@ release: .install-poetry
 	@echo "Please remember to update the CHANGELOG.md, before tagging the release"
 	@poetry version ${version}
 
-deploy: .check-env-vars .deps build bump-version
-	poetry config repo.pypi-switch https://pypi.switch-ev.com/
-	poetry config http-basic.pypi-switch ${PYPI_USER} ${PYPI_PASS}
-	poetry publish -r pypi-switch
