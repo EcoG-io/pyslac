@@ -217,7 +217,118 @@ class SlacSession:
         self.matching_process_task = None
 
 
-class SlacEvseSession(SlacSession):
+class StateMachineContext:
+
+    _state = None
+
+    def __init__(self, state: State) -> None:
+        self.go_to(state)
+
+    def go_to(self, state: State):
+        print(f"Context: Transitioning to {type(state).__name__}")
+        self._state = state
+        self._state.context = self
+
+    async def run(self):
+        self._state.on_enter()
+        self._state.run()
+        self._state.on_exit()
+
+
+class State(ABC):
+    @property
+    def context(self) -> Context:
+        return self._context
+
+    @context.setter
+    def context(self, context: Context) -> None:
+        self._context = context
+
+    @abstractmethod
+    def run(self) -> None:
+        pass
+
+    @abstractmethod
+    def on_enter(self) -> None:
+        pass
+
+    @abstractmethod
+    def on_exit(self) -> None:
+        pass
+
+
+class SlacParmState(State):
+
+    async def on_enter(self, ):
+
+    async def run(self) -> None:
+        await self.evse_slac_parm()
+
+    async def evse_slac_parm(self) -> None:
+        logger.debug("CM_SLAC_PARM: Started...")
+        # TODO: Pass the expected parameters later to the read function
+        # so that it can be evaluated while the timeout hasnt elapsed
+        self.reset_socket()
+        while True:
+            try:
+                # A complete CM_SLAC_PARM.REQ frame must have 60 Bytes:
+                # EthernetHeader = 14 bytes
+                # HomePlugHeader  = 5 bytes
+                # SlacParmReq = 10 bytes
+                # Padding = 31 bytes (The min ETH frame must have 60 bytes,
+                # it this frame requires padding)
+                data_rcvd = await self.rcv_frame(
+                    rcv_frame_size=FramesSizes.CM_SLAC_PARM_REQ,
+                    timeout=self.config.slac_init_timeout,
+                )
+            except TimeoutError as e:
+                logger.warning(f"Timeout waiting for CM_SLAC_PARM.REQ: {e}")
+                raise e
+            try:
+                ether_frame = EthernetHeader.from_bytes(data_rcvd)
+                homeplug_frame = HomePlugHeader.from_bytes(data_rcvd)
+                if homeplug_frame.mm_type != CM_SLAC_PARM | MMTYPE_REQ:
+                    logger.warning("Frame received is not CM_SLAC_PARM.REQ")
+                    logger.debug("Continue waiting for CM_SLAC_PARM.REQ...")
+                    continue
+                slac_parm_req = SlacParmReq.from_bytes(data_rcvd)
+            except Exception as e:
+                # TODO: PROPER Exception
+                logger.exception(e, exc_info=True)
+                raise e
+            break
+
+        # Saving SLAC_PARM_REQ parameters from EV
+        self.application_type = slac_parm_req.application_type
+        self.security_type = slac_parm_req.security_type
+        self.run_id = slac_parm_req.run_id
+
+        # both fields are filled with the EV MAC Address
+        self.pev_mac = ether_frame.src_mac
+        self.forwarding_sta = ether_frame.src_mac
+
+        # SLAC_PARM_CNF frame formation
+        ether_header = EthernetHeader(dst_mac=self.pev_mac, src_mac=self.evse_mac)
+        homeplug_header = HomePlugHeader(CM_SLAC_PARM | MMTYPE_CNF)
+        slac_parm_cnf = SlacParmCnf(forwarding_sta=self.pev_mac, run_id=self.run_id)
+
+        frame_to_send = (
+                ether_header.pack_big()
+                + homeplug_header.pack_big()
+                + slac_parm_cnf.pack_big()
+        )
+
+        await self.send_frame(frame_to_send)
+        logger.debug("Sent SLAC_PARM.CNF")
+
+        # Update SLAC Session State, indicating that is occupied and ready for
+        # a match decision process
+        self.state = STATE_MATCHING
+
+        logger.debug("CM_SLAC_PARM: Finished!")
+
+
+class SlacEvseSession(SlacSession, StateMachineContext):
     # pylint: disable=too-many-instance-attributes, too-many-arguments
     # pylint: disable=logging-fstring-interpolation, broad-except
     def __init__(self, evse_id: str, iface: str, config: Config):
@@ -231,6 +342,9 @@ class SlacEvseSession(SlacSession):
         self.socket = create_socket(iface=self.iface, port=0)
         self.evse_plc_mac = EVSE_PLC_MAC
         SlacSession.__init__(self, state=STATE_UNMATCHED, evse_mac=host_mac)
+        StateMachineContext.__init__(self, SlacParmState())
+
+
 
     def reset_socket(self):
         self.socket.close()
@@ -346,68 +460,6 @@ class SlacEvseSession(SlacSession):
         logger.debug("CM_SET_KEY: Finished!")
         return data_rcvd
 
-    async def evse_slac_parm(self) -> None:
-        logger.debug("CM_SLAC_PARM: Started...")
-        # TODO: Pass the expected parameters later to the read function
-        # so that it can be evaluated while the timeout hasnt elapsed
-        self.reset_socket()
-        while True:
-            try:
-                # A complete CM_SLAC_PARM.REQ frame must have 60 Bytes:
-                # EthernetHeader = 14 bytes
-                # HomePlugHeader  = 5 bytes
-                # SlacParmReq = 10 bytes
-                # Padding = 31 bytes (The min ETH frame must have 60 bytes,
-                # it this frame requires padding)
-                data_rcvd = await self.rcv_frame(
-                    rcv_frame_size=FramesSizes.CM_SLAC_PARM_REQ,
-                    timeout=self.config.slac_init_timeout,
-                )
-            except TimeoutError as e:
-                logger.warning(f"Timeout waiting for CM_SLAC_PARM.REQ: {e}")
-                raise e
-            try:
-                ether_frame = EthernetHeader.from_bytes(data_rcvd)
-                homeplug_frame = HomePlugHeader.from_bytes(data_rcvd)
-                if homeplug_frame.mm_type != CM_SLAC_PARM | MMTYPE_REQ:
-                    logger.warning("Frame received is not CM_SLAC_PARM.REQ")
-                    logger.debug("Continue waiting for CM_SLAC_PARM.REQ...")
-                    continue
-                slac_parm_req = SlacParmReq.from_bytes(data_rcvd)
-            except Exception as e:
-                # TODO: PROPER Exception
-                logger.exception(e, exc_info=True)
-                raise e
-            break
-
-        # Saving SLAC_PARM_REQ parameters from EV
-        self.application_type = slac_parm_req.application_type
-        self.security_type = slac_parm_req.security_type
-        self.run_id = slac_parm_req.run_id
-
-        # both fields are filled with the EV MAC Address
-        self.pev_mac = ether_frame.src_mac
-        self.forwarding_sta = ether_frame.src_mac
-
-        # SLAC_PARM_CNF frame formation
-        ether_header = EthernetHeader(dst_mac=self.pev_mac, src_mac=self.evse_mac)
-        homeplug_header = HomePlugHeader(CM_SLAC_PARM | MMTYPE_CNF)
-        slac_parm_cnf = SlacParmCnf(forwarding_sta=self.pev_mac, run_id=self.run_id)
-
-        frame_to_send = (
-            ether_header.pack_big()
-            + homeplug_header.pack_big()
-            + slac_parm_cnf.pack_big()
-        )
-
-        await self.send_frame(frame_to_send)
-        logger.debug("Sent SLAC_PARM.CNF")
-
-        # Update SLAC Session State, indicating that is occupied and ready for
-        # a match decision process
-        self.state = STATE_MATCHING
-
-        logger.debug("CM_SLAC_PARM: Finished!")
 
     async def cm_start_atten_charac(self):
         logger.debug("CM_START_ATTEN_CHAR: Started...")
