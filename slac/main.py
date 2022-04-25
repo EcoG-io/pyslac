@@ -7,14 +7,13 @@ import asyncio
 import functools
 import json
 import logging
-import dacite
-from aiofile import async_open
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
 from inspect import isawaitable
 from typing import Any, List, Optional, Set
 
-
+import dacite
+from aiofile import async_open
 from asyncio_mqtt.client import Client
 from dacite import from_dict
 from mqtt_api.mqtt import Mqtt
@@ -96,7 +95,8 @@ class SlacHandler(Mqtt):
                 json_content = await f.read()
                 data = json.loads(json_content)
                 cs_parameters = from_dict(
-                    data_class=response.CsParametersPayload, data=data,
+                    data_class=response.CsParametersPayload,
+                    data=data,
                     config=dacite.Config(cast=[Enum]),
                 )
         except Exception as e:
