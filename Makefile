@@ -48,7 +48,7 @@ build:
 	docker-compose build
 
 dev:
-    # the dev file apply changes to the original compose file
+	# the dev file apply changes to the original compose file
 	docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
 
 run:
