@@ -831,9 +831,23 @@ class SlacSessionController:
         pass
 
     async def notify_matching_ongoing(self, evse_id: str):
+        """
+        Used to Notify an external service that a Matching process is ongoing
+        """
         pass
 
     async def notify_matching_failed(self, evse_id: str):
+        """
+        Used to Notify an external service that a Matching process has failed
+        """
+        pass
+
+    async def enable_hlc_charging(self, evse_id: str):
+        """
+        Used to interface with an external service that controls the PWM of the
+        Control Pilot circuit and then trigger High Level Communication Charging,
+        by enabling the PWM and setting the duty cycle to 5%
+        """
         pass
 
     async def process_cp_state(self, slac_session, state: str):
@@ -879,7 +893,7 @@ class SlacSessionController:
         in case it fails again, it gives up and just with a transition to B, C or D,
         SLAC will restart.
 
-        :param slac_session: Instance of SlacEVSESession
+        :param slac_session: Instance of SlacEvseSession
         :param number_of_retries: number of trials before SLAC Mathing is defined
         as a failure
         :return: None
