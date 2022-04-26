@@ -60,7 +60,7 @@ async def main(env_path: Optional[str] = None):
     slac_config = Config()
     slac_config.load_envs(env_path)
     root_dir = os.path.dirname(os.path.abspath(__file__))
-    json_file = open(root_dir + "/cs_configuration.json")
+    json_file = open(os.path.join(root_dir, "cs_configuration.json"))
     cs_config = json.load(json_file)
     json_file.close()
     slac_handler = SlacHandler(slac_config)
