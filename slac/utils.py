@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 import socket
 import struct
@@ -9,11 +8,6 @@ from hashlib import sha256
 from math import copysign
 from sys import platform
 from typing import Any, Awaitable, List
-
-from asyncio_mqtt import Client
-from asyncio_mqtt.client import ProtocolVersion
-
-from slac.environment import Config
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("slac_utils")
@@ -30,21 +24,6 @@ ARPHDR_LOOPBACK = 772
 ARPHDR_TUN = 65534
 
 NID_LENGTH = 7
-
-
-async def mqtt_send(message: dict, topic: str, config: Config):
-    """
-    Publish a message to a specific topic.
-
-    RECEIVES: 2 strings containing, the meeesage to be sent (param No. 1)
-    and the topic (param No.2).
-
-    RETURNS: nothing.
-    """
-    async with Client(
-        hostname=config.mqtt_host, port=config.mqtt_port, protocol=ProtocolVersion.V31
-    ) as client:
-        await client.publish(topic, payload=json.dumps(message), qos=2, retain=False)
 
 
 def generate_nid(nmk: bytes):

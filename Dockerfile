@@ -1,9 +1,6 @@
 # Build image
 FROM python:3.10.0-buster as build
 
-ARG PYPI_USER
-ARG PYPI_PASS
-
 WORKDIR /usr/src/app
 
 ENV PYTHONFAULTHANDLER=1 \
@@ -23,8 +20,6 @@ RUN pip install "poetry==$POETRY_VERSION"
 # However, if we run poetry config virtualenvs.create false, then we dont.
 # Do not create a virtual poetry env as we already are in an isolated container
 RUN poetry config virtualenvs.create false
-# Set the credentials
-RUN poetry config http-basic.pypi-switch $PYPI_USER $PYPI_PASS
 # pylintrc, coveragerc, poetry.lock and pyproject.toml shall not change very
 # often, so it is a good idea to add them as soon as possible
 COPY .coveragerc pyproject.toml poetry.lock ./
@@ -48,21 +43,16 @@ RUN poetry build
 # Runtime image (which is smaller than the build one)
 FROM python:3.10.0-buster
 
-ARG PYPI_USER
-ARG PYPI_PASS
-
 WORKDIR /usr/src/app
 
 # create virtualenv
 RUN python -m venv /venv
 
 COPY --from=build /usr/src/app/dist/ dist/
+COPY --from=build /usr/src/app/slac/examples/cs_configuration.json .
 
 
-# This will install the wheels in the venv
-# We need to specify the Switch Pypis server as extra-index to look for, in
-# order to install switch custom libs
-RUN /venv/bin/pip install dist/*.whl --extra-index-url https://$PYPI_USER:$PYPI_PASS@pypi.switch-ev.com/simple
+# This will install the wheel in the venv
+RUN /venv/bin/pip install dist/*.whl
 
-# This will run the entrypoint script defined in the pyproject.toml
-CMD /venv/bin/slac
+CMD /venv/bin/python3 /venv/lib/python3.10/site-packages/slac/examples/single_slac_session.py

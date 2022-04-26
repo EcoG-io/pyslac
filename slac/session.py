@@ -59,7 +59,7 @@ from slac.sockets.async_linux_socket import (
     send_recv_eth,
     sendeth,
 )
-from slac.utils import generate_nid, get_if_hwaddr
+from slac.utils import cancel_task, generate_nid, get_if_hwaddr
 from slac.utils import half_round as hw
 from slac.utils import time_now_ms
 
@@ -824,3 +824,111 @@ class SlacEvseSession(SlacSession):
         await self.cm_sounds_loop()
         await self.cm_atten_char()
         await self.cm_slac_match()
+
+
+class SlacSessionController:
+    def __init__(self):
+        pass
+
+    async def notify_matching_ongoing(self, evse_id: str):
+        pass
+
+    async def notify_matching_failed(self, evse_id: str):
+        pass
+
+    async def process_cp_state(self, slac_session, state: str):
+        """
+        If it is the case a matching process is not ongoing
+        and the CP has transited to state B, C or D, it spawns a new matching task,
+        otherwise if transited to A, E or F and a matching task is running and
+        the state is "Matched", then it kills the task. This extra check for the
+        state "Matched" is to avoid to kill the task during transitions to state
+        E/F which can happen, e.g., if user does EIM after Plugin and before
+        the first SLAC message is received.
+        """
+        # Some states contain the indication if the station can provide energy
+        # or not (e.g. A1 - it cant, A2 it can); so we get only the first character
+        # from the string, since is that what we are interested here.
+        cp_state = state[0]
+        logger.debug(f"CP State Received: {state}")
+        if cp_state in ["A", "E", "F"] and slac_session.matching_process_task:
+            if cp_state == "A" or slac_session.state == STATE_MATCHED:
+                # We kill the task if a direct transition to state A is detected
+                # or if E,F is detected and we are in state 'Matched'
+                await cancel_task(slac_session.matching_process_task)
+                logger.debug("Matching process task canceled")
+                # leaving the logical network
+                # In order to avoid writing too many times to the device,
+                # we dont reset the NID and NMK between charging sessions for now
+                # await slac_session.leave_logical_network()
+                slac_session.matching_process_task = None
+                logger.debug("Leaving Logical Network")
+        elif cp_state in ["B", "C", "D"] and slac_session.matching_process_task is None:
+            slac_session.matching_process_task = asyncio.create_task(
+                self.start_matching(slac_session)
+            )
+
+    async def start_matching(
+        self, slac_session: "SlacEvseSession", number_of_retries=3
+    ) -> None:
+        """
+        Task that is spawned once a state change is detected from A, E or F to
+        B, C or D. This task is responsible to run the right methods defined in
+        session.py, which as a whole comprise the SLAC protocol.
+        In case SLAC fails, it retries up to 3 times to get a match, and
+        in case it fails again, it gives up and just with a transition to B, C or D,
+        SLAC will restart.
+
+        :param slac_session: Instance of SlacEVSESession
+        :param number_of_retries: number of trials before SLAC Mathing is defined
+        as a failure
+        :return: None
+        """
+        while number_of_retries:
+            number_of_retries -= 1
+            await slac_session.evse_slac_parm()
+            if slac_session.state == STATE_MATCHING:
+                logger.debug("Matching ongoing...")
+                await self.notify_matching_ongoing(slac_session.evse_id)
+                try:
+                    await slac_session.atten_charac_routine()
+                except Exception as e:
+                    slac_session.state = STATE_UNMATCHED
+                    logger.debug(
+                        f"Exception Occurred during Attenuation Charc Routine:"
+                        f"{e} \n"
+                        f"Number of retries left {number_of_retries}"
+                    )
+            if slac_session.state == STATE_MATCHED:
+                logger.debug("PEV-EVSE MATCHED Successfully, Link Established")
+                while True:
+                    await asyncio.sleep(2.0)
+
+                # The check of the link status wont be done using the message
+                # LINK_STATUS, because it is not a proper way to check it since
+                # it only provides a confirmation to the message
+                # Instead, NW_INFO message is a better one
+
+                # logger.debug("PEV-EVSE Link Lost")
+                # leaving the logical network
+                # In order to avoid writing too many times to the device,
+                # we dont reset the NID and NMK between charging sessions for now
+                # await slac_session.leave_logical_network()
+                # slac_session.matching_process_task = None
+                # break
+            if slac_session.state == STATE_UNMATCHED:
+                number_of_retries -= 1
+                if number_of_retries > 0:
+                    logger.warning("PEV-EVSE MATCHED Failed; Retrying..")
+                else:
+                    logger.error("PEV-EVSE MATCHED Failed: No more retries " "possible")
+                    await self.notify_matching_failed(slac_session.evse_id)
+            else:
+                logger.error(f"SLAC State not recognized {slac_session.state}")
+
+        logger.debug("SLAC Protocol Concluded...")
+        # TODO: May need to communicate to HLE that the link is lost (check section
+        # 7.5 Loss of communication in -3). Send Unmatched
+        # TODO: May need to communicate to CS that the link is gone, so that
+        # Basic Charging can be tried
+        await slac_session.leave_logical_network()

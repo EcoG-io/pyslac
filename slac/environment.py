@@ -12,8 +12,6 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class Config:
-    mqtt_host: Optional[str] = None
-    mqtt_port: Optional[int] = None
     slac_init_timeout: Optional[int] = None
     log_level: Optional[int] = None
 
@@ -29,8 +27,6 @@ class Config:
         if not env_path:
             env_path = os.getcwd() + "/.env"
         env.read_env(path=env_path)  # read .env file, if it exists
-        self.mqtt_host = env.str("MQTT_HOST")
-        self.mqtt_port = env.int("MQTT_PORT")
 
         # This timer is set in docker-compose.dev.yml, for merely debugging and dev
         # reasons
