@@ -24,10 +24,10 @@ class SlacHandler(SlacSessionController):
         self.running_sessions: List["SlacEvseSession"] = []
 
     async def notify_matching_ongoing(self, evse_id: str):
-        """overrides the notify matching ongoing method defined in 
+        """overrides the notify matching ongoing method defined in
         SlacSessionController"""
         logger.info(f"Matching is ongoing for {evse_id}")
-        
+
     async def enable_hlc_charging(self, evse_id: str):
         """
         overrides the enable_hlc_charging method defined in SlacSessionController
@@ -44,9 +44,7 @@ class SlacHandler(SlacSessionController):
         evse_id: str = evse_params["evse_id"]
         network_interface: str = evse_params["network_interface"]
         try:
-            slac_session = SlacEvseSession(
-                evse_id, network_interface, self.slac_config
-            )
+            slac_session = SlacEvseSession(evse_id, network_interface, self.slac_config)
             await slac_session.evse_set_key()
             self.running_sessions.append(slac_session)
         except (OSError, TimeoutError, ValueError) as e:
