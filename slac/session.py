@@ -836,12 +836,12 @@ class SlacSessionController:
     async def notify_matching_failed(self, evse_id: str):
         pass
 
-    async def process_cp_status(self, slac_session, state: str):
+    async def process_cp_state(self, slac_session, state: str):
         """
         If it is the case a matching process is not ongoing
         and the CP has transited to state B, C or D, it spawns a new matching task,
         otherwise if transited to A, E or F and a matching task is running and
-        the state is "Matched" and it kills the task. This extra check for the
+        the state is "Matched", then it kills the task. This extra check for the
         state "Matched" is to avoid to kill the task during transitions to state
         E/F which can happen, e.g., if user does EIM after Plugin and before
         the first SLAC message is received.

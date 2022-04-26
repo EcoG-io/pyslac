@@ -57,14 +57,20 @@ run:
 poetry-update:
 	poetry update
 
-install-local: .check-env-vars
+install-local:
 	pip install .
 
-run-local:
-	python slac/main.py
+run-local-single:
+	python slac/examples/single_slac_session.py
 
-run-local-sudo:
-	sudo $(shell which python) slac/main.py
+run-local-multiple:
+	python slac/examples/multiple_slac_sessions.py
+
+run-local-sudo-single:
+	sudo $(shell which python) slac/examples/single_slac_session.py
+
+run-local-sudo-multiple:
+	sudo $(shell which python) slac/examples/multiple_slac_sessions.py
 
 run-ev-slac:
 	sudo $(shell which python) slac/examples/ev_slac_scapy.py

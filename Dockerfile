@@ -49,12 +49,10 @@ WORKDIR /usr/src/app
 RUN python -m venv /venv
 
 COPY --from=build /usr/src/app/dist/ dist/
+COPY --from=build /usr/src/app/slac/examples/cs_configuration.json .
 
 
-# This will install the wheels in the venv
-# We need to specify the Switch Pypis server as extra-index to look for, in
-# order to install switch custom libs
+# This will install the wheel in the venv
 RUN /venv/bin/pip install dist/*.whl
 
-# This will run the entrypoint script defined in the pyproject.toml
-CMD /venv/bin/slac
+CMD /venv/bin/python3 /venv/lib/python3.10/site-packages/slac/examples/single_slac_session.py
