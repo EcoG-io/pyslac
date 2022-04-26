@@ -5,6 +5,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2022-04-26
+
+### Removed
+
+- removed references of the switch mqtt API  by @tropxy in https://github.com/SwitchEV/slac/pull/18
+
+### Added
+
+- added enable_hlc_charging as a method of SlacSessionController  by @tropxy in https://github.com/SwitchEV/slac/pull/19
+
+
 ## [0.6.0] - 2022-04-12
 
 ### Changed
