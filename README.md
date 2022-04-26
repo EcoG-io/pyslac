@@ -4,8 +4,8 @@ Python Implementation of the SLAC Protocol as specified by ISO15118-3 [^1]
 
 ## How to test it and fire it up :fire:
 
-The project depends on an installation of slac as a module in your current environment.
-Dependencies management are handled by `Poetry`.
+The project depends on an installation of slac as a module in the user environment.
+Dependencies management is handled by `Poetry`.
 
 > Dependencies:
 >
