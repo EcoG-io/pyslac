@@ -7,6 +7,7 @@ if not is_distro_linux():
 import asyncio
 import json
 import logging
+import os
 from typing import List, Optional
 
 from slac.environment import Config
@@ -58,8 +59,8 @@ async def main(env_path: Optional[str] = None):
     # get configuration
     slac_config = Config()
     slac_config.load_envs(env_path)
-
-    json_file = open("cs_configuration.json")
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    json_file = open(root_dir + "/cs_configuration.json")
     cs_config = json.load(json_file)
     json_file.close()
     slac_handler = SlacHandler(slac_config)
