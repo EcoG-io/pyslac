@@ -163,6 +163,22 @@ async def cancel_task(task):
         pass
 
 
+def task_callback(task: asyncio.Task):
+    """
+    Callback for a task
+    This is very useful when spawning tasks in the background with asyncio.create_task.
+    As the task runs in the background any runtime exception is not logged, so with this
+    callback, it is possible to keep logging the exceptions
+    https://stackoverflow.com/questions/66293545/asyncio-re-raise-exception-from-a-task
+    """
+    try:
+        task.result()
+    except asyncio.CancelledError:
+        pass  # Task cancellation should not be logged as an error.
+    except Exception as e:
+        logger.error(f"Exception raised by task: {task.get_name()}", e)
+
+
 async def wait_till_finished(
     awaitables: List[Awaitable[Any]], finished_when=asyncio.FIRST_EXCEPTION
 ):

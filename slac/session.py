@@ -61,7 +61,7 @@ from slac.sockets.async_linux_socket import (
 )
 from slac.utils import cancel_task, generate_nid, get_if_hwaddr
 from slac.utils import half_round as hw
-from slac.utils import time_now_ms
+from slac.utils import task_callback, time_now_ms
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("slac_session")
@@ -881,6 +881,14 @@ class SlacSessionController:
             slac_session.matching_process_task = asyncio.create_task(
                 self.start_matching(slac_session)
             )
+            slac_session.matching_process_task.set_name(
+                f"Session for EVSE {slac_session.evse_id}"
+            )
+            # This avoids the exceptions to be "swallowed" by the create_task in the
+            # background.
+            # TODO: Evaluate the benefits of using frameworks like trio whose event loop
+            # forces each task to have a nursery, so that exceptions are not lst
+            slac_session.matching_process_task.add_done_callback(task_callback)
 
     async def start_matching(
         self, slac_session: "SlacEvseSession", number_of_retries=3
