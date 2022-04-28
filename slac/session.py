@@ -887,7 +887,7 @@ class SlacSessionController:
             # This avoids the exceptions to be "swallowed" by the create_task in the
             # background.
             # TODO: Evaluate the benefits of using frameworks like trio whose event loop
-            # forces each task to have a nursery, so that exceptions are not lst
+            # forces each task to have a nursery, so that exceptions are not lost
             slac_session.matching_process_task.add_done_callback(task_callback)
 
     async def start_matching(
