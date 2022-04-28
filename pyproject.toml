@@ -1,11 +1,11 @@
 [tool.poetry]
 name = "slac"
-version = "0.7.0"
+version = "0.7.1"
 description = "SLAC Protocol implementation, defined in ISO15118-3"
 authors = ["André Duarte <andre@switch-ev.com, andre14x@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.7"
 environs = "^9.5.0"
 
 [tool.poetry.dev-dependencies]

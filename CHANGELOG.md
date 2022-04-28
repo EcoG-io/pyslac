@@ -5,6 +5,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [0.7.1] - 2022-04-28
+
+### Added
+
+- Added a way to log the exceptions that otherwise would go unnoticed by @tropxy in https://github.com/SwitchEV/slac/pull/21
+- downgraded the python min version supported to 3.7 for more broad compatibility
+
 ## [0.7.0] - 2022-04-26
 
 ### Removed
