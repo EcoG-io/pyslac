@@ -5,6 +5,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2022-05-24
+
+### Changed
+- switched the package upload to public pypi server by @tropxy in https://github.com/SwitchEV/slac/pull/24
 
 ## [0.7.1] - 2022-04-28
 
