@@ -154,7 +154,7 @@ The key-value pairs defined in the `.env` file directly affect the settings pres
 
 Any of those variables can also be set by exporting their value in the env:
 
-`$ export NETWORK_INTERFACE=eth1`
+`$ export LOG_LEVEL=DEBUG`
 
 
 
