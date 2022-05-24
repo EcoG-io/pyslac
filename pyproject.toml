@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyslac"
-version = "0.8.0"
+version = "0.8.1"
 description = "SLAC Protocol implementation, defined in ISO15118-3"
 authors = ["André Duarte <andre@switch-ev.com, andre14x@gmail.com>"]
 
