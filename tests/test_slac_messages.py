@@ -1,4 +1,4 @@
-from slac.enums import (
+from pyslac.enums import (
     BROADCAST_ADDR,
     CM_SET_CCO_CAPAB,
     CM_SET_KEY_MY_NONCE,
@@ -14,7 +14,7 @@ from slac.enums import (
     SLAC_RESP_TYPE,
     SLAC_SECURITY_TYPE,
 )
-from slac.messages import (
+from pyslac.messages import (
     AtennChar,
     AtennCharRsp,
     AttenProfile,

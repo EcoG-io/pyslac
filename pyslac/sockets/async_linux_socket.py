@@ -16,8 +16,8 @@ from socket import (
 from struct import pack
 from typing import Optional
 
-from slac.enums import BUFF_MAX_SIZE, Timers
-from slac.sockets.enums import (
+from pyslac.enums import BUFF_MAX_SIZE, Timers
+from pyslac.sockets.enums import (
     BPF_ABS,
     BPF_H,
     BPF_JEQ,
@@ -29,7 +29,7 @@ from slac.sockets.enums import (
     ETH_P_HPAV,
     SO_ATTACH_FILTER,
 )
-from slac.utils import time_now_ms
+from pyslac.utils import time_now_ms
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("async_linux_socket")

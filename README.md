@@ -183,8 +183,8 @@ To start the test, you may need root privileges and to start in the following
 order:
 
 ```bash
-$ sudo $(shell which python) slac/examples/single_slac_session.py
-$ sudo $(shell which python) slac/examples/ev_slac_scapy.py
+$ sudo $(shell which python) pyslac/examples/single_slac_session.py
+$ sudo $(shell which python) pyslac/examples/ev_slac_scapy.py
 ```
 
 This integration test was tested under:

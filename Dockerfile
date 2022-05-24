@@ -34,7 +34,7 @@ RUN poetry install --no-interaction --no-ansi
 # Run the tests and linting for slac (as we are not using poetry venv, we are
 # not running it with RUN poetry run pytest...)
 RUN pytest -vv --cov-config .coveragerc --cov-report term-missing  --durations=3 --cov=.
-RUN flake8 --config .flake8 slac tests
+RUN flake8 --config .flake8 pyslac tests
 
 
 # Generate the wheel to be used by next stage
@@ -49,10 +49,10 @@ WORKDIR /usr/src/app
 RUN python -m venv /venv
 
 COPY --from=build /usr/src/app/dist/ dist/
-COPY --from=build /usr/src/app/slac/examples/cs_configuration.json .
+COPY --from=build /usr/src/app/pyslac/examples/cs_configuration.json .
 
 
 # This will install the wheel in the venv
 RUN /venv/bin/pip install dist/*.whl
 
-CMD /venv/bin/python3 /venv/lib/python3.10/site-packages/slac/examples/single_slac_session.py
+CMD /venv/bin/python3 /venv/lib/python3.10/site-packages/pyslac/examples/single_slac_session.py

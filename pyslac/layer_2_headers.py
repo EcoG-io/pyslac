@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from slac.enums import ETH_TYPE_HPAV, HOMEPLUG_FMID, HOMEPLUG_FMSN, HOMEPLUG_MMV
+from pyslac.enums import ETH_TYPE_HPAV, HOMEPLUG_FMID, HOMEPLUG_FMSN, HOMEPLUG_MMV
 
 
 @dataclass

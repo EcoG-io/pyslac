@@ -19,7 +19,7 @@ help:
 	@echo "  run-local                 runs the app locally with prod settings"
 	@echo "  run-local-sudo            runs the app locally using prod settings and root privileges"
 	@echo "  poetry-update             updates the dependencies in poetry.lock"
-	@echo "  install-local             installs slac into the current environment"
+	@echo "  install-local             installs pyslac into the current environment"
 	@echo "  tests                     run all the tests"
 	@echo "  reformat                  reformats the code, using Black"
 	@echo "  flake8                    flakes8 the code"
@@ -61,31 +61,31 @@ install-local:
 	pip install .
 
 run-local-single:
-	python slac/examples/single_slac_session.py
+	python pyslac/examples/single_slac_session.py
 
 run-local-multiple:
-	python slac/examples/multiple_slac_sessions.py
+	python pyslac/examples/multiple_slac_sessions.py
 
 run-local-sudo-single:
-	sudo $(shell which python) slac/examples/single_slac_session.py
+	sudo $(shell which python) pyslac/examples/single_slac_session.py
 
 run-local-sudo-multiple:
-	sudo $(shell which python) slac/examples/multiple_slac_sessions.py
+	sudo $(shell which python) pyslac/examples/multiple_slac_sessions.py
 
 run-ev-slac:
-	sudo $(shell which python) slac/examples/ev_slac_scapy.py
+	sudo $(shell which python) pyslac/examples/ev_slac_scapy.py
 
 mypy:
-	mypy --config-file mypy.ini slac tests
+	mypy --config-file mypy.ini pyslac tests
 
 reformat:
-	isort slac tests && black --exclude --line-length=88 slac tests
+	isort pyslac tests && black --exclude --line-length=88 pyslac tests
 
 black:
-	black --exclude --check --diff --line-length=88 slac tests
+	black --exclude --check --diff --line-length=88 pyslac tests
 
 flake8:
-	flake8 --config .flake8 slac tests
+	flake8 --config .flake8 pyslac tests
 
 code-quality: reformat mypy black flake8
 

@@ -29,7 +29,7 @@ jobs:
         poetry update
         poetry install
         poetry run pytest tests
-        poetry run black --check --diff --line-length=88 slac tests
+        poetry run black --check --diff --line-length=88 pyslac tests
       env:
         TAG_VERSION: ${{ steps.context.outputs.TAG_VERSION }}
         PYPI_USER: ${{ secrets.PYPI_USER }}
