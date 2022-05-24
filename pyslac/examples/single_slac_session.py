@@ -1,4 +1,4 @@
-from slac.utils import is_distro_linux
+from pyslac.utils import is_distro_linux
 
 if not is_distro_linux():
     raise EnvironmentError("Non-Linux systems are not supported")
@@ -9,9 +9,9 @@ import logging
 import os
 from typing import List, Optional
 
-from slac.environment import Config
-from slac.session import SlacEvseSession, SlacSessionController
-from slac.utils import wait_till_finished
+from pyslac.environment import Config
+from pyslac.session import SlacEvseSession, SlacSessionController
+from pyslac.utils import wait_till_finished
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__file__)

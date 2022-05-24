@@ -2,7 +2,7 @@ import ctypes
 from dataclasses import dataclass
 from typing import List
 
-from slac.enums import (
+from pyslac.enums import (
     BROADCAST_ADDR,
     CM_SET_CCO_CAPAB,
     CM_SET_KEY_MY_NONCE,

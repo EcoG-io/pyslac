@@ -5,7 +5,7 @@ from typing import Optional
 
 import environs
 
-from slac.enums import Timers
+from pyslac.enums import Timers
 
 logger = logging.getLogger(__name__)
 

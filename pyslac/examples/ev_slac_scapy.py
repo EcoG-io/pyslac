@@ -12,7 +12,7 @@ from scapy.all import (
     sendp,
 )
 
-from slac.enums import (
+from pyslac.enums import (
     CM_ATTEN_CHAR,
     CM_ATTEN_PROFILE,
     CM_MNBC_SOUND,
@@ -27,7 +27,7 @@ from slac.enums import (
     MMTYPE_RSP,
     SLAC_SETTLE_TIME,
 )
-from slac.utils import get_if_hwaddr
+from pyslac.utils import get_if_hwaddr
 
 BROADCAST_ADDR = "FF:FF:FF:FF:FF:FF"
 ATHEROS_CHIP_MAC = "00:b0:52:00:00:01"

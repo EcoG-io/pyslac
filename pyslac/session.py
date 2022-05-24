@@ -6,7 +6,7 @@ from inspect import isawaitable
 from os import urandom
 from typing import List, Optional, Union
 
-from slac.enums import (
+from pyslac.enums import (
     ATTEN_RESULTS_TIMEOUT,
     CM_ATTEN_CHAR,
     CM_ATTEN_PROFILE,
@@ -38,9 +38,9 @@ from slac.enums import (
 
 # This timeout is imported from the environment file, because it makes it
 # easier to use it with the dev compose file for dev and debugging reasons
-from slac.environment import Config
-from slac.layer_2_headers import EthernetHeader, HomePlugHeader
-from slac.messages import (
+from pyslac.environment import Config
+from pyslac.layer_2_headers import EthernetHeader, HomePlugHeader
+from pyslac.messages import (
     AtennChar,
     AtennCharRsp,
     AttenProfile,
@@ -53,15 +53,15 @@ from slac.messages import (
     SlacParmReq,
     StartAtennChar,
 )
-from slac.sockets.async_linux_socket import (
+from pyslac.sockets.async_linux_socket import (
     create_socket,
     readeth,
     send_recv_eth,
     sendeth,
 )
-from slac.utils import cancel_task, generate_nid, get_if_hwaddr
-from slac.utils import half_round as hw
-from slac.utils import task_callback, time_now_ms
+from pyslac.utils import cancel_task, generate_nid, get_if_hwaddr
+from pyslac.utils import half_round as hw
+from pyslac.utils import task_callback, time_now_ms
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("slac_session")
@@ -294,7 +294,7 @@ class SlacEvseSession(SlacSession):
         The only secure way to remove a STA from an AVLN is to change the NMK
         """
         logger.debug("CM_SET_KEY: Started...")
-        # for each new set_key message sent (or slac session),
+        # for each new set_key message sent (or pyslac session),
         # a new pair of NID (Network ID) and NMK (Network Mask) shall be
         # generated
         nmk = urandom(16)

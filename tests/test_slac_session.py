@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from slac.enums import (
+from pyslac.enums import (
     ATTEN_RESULTS_TIMEOUT,
     BROADCAST_ADDR,
     CM_ATTEN_CHAR,
@@ -33,9 +33,9 @@ from slac.enums import (
     STATE_MATCHING,
     STATE_UNMATCHED,
 )
-from slac.layer_2_headers import EthernetHeader, HomePlugHeader
-from slac.messages import AttenProfile  # MnbcSound,
-from slac.messages import (
+from pyslac.layer_2_headers import EthernetHeader, HomePlugHeader
+from pyslac.messages import AttenProfile  # MnbcSound,
+from pyslac.messages import (
     AtennChar,
     AtennCharRsp,
     MatchCnf,
@@ -46,7 +46,7 @@ from slac.messages import (
     SlacParmReq,
     StartAtennChar,
 )
-from slac.utils import half_round as hw
+from pyslac.utils import half_round as hw
 
 PEV_MAC = b"\xBB" * 6
 RUN_ID = b"\xFA" * 8
@@ -92,9 +92,9 @@ async def test_set_key(evse_slac_session, dummy_config, evse_mac):
     # This first patch is to change the original SETTLE_TIME of 10 sec
     # so that during tests we dont wait so long
     evse_slac_session.send_frame = AsyncMock()
-    with patch("slac.session.SLAC_SETTLE_TIME", 0.5):
-        with patch("slac.session.readeth", new=AsyncMock(return_value=key_cnf_frame)):
-            with patch("slac.session.urandom", new=Mock(return_value=QUALCOMM_NMK)):
+    with patch("pyslac.session.SLAC_SETTLE_TIME", 0.5):
+        with patch("pyslac.session.readeth", new=AsyncMock(return_value=key_cnf_frame)):
+            with patch("pyslac.session.urandom", new=Mock(return_value=QUALCOMM_NMK)):
                 data_rcvd = await evse_slac_session.evse_set_key()
 
                 assert data_rcvd == key_cnf_frame
@@ -128,7 +128,9 @@ async def test_slac_parm(evse_slac_session, evse_mac):
     slac_parm_cnf_frame = (
         ether_header.pack_big() + homeplug_header.pack_big() + slac_parm_cnf.pack_big()
     )
-    with patch("slac.session.readeth", new=AsyncMock(return_value=slac_parm_req_frame)):
+    with patch(
+        "pyslac.session.readeth", new=AsyncMock(return_value=slac_parm_req_frame)
+    ):
         evse_slac_session.send_frame = AsyncMock()
         await evse_slac_session.evse_slac_parm()
 
@@ -165,7 +167,7 @@ async def test_cm_start_atten_charac(evse_slac_session):
         + start_atten_car.pack_big()
     )
     with patch(
-        "slac.session.readeth", new=AsyncMock(return_value=start_atten_car_frame)
+        "pyslac.session.readeth", new=AsyncMock(return_value=start_atten_car_frame)
     ):
         # Fake that we already received these parameters before, during
         # SLAC Param message sequence
@@ -202,7 +204,7 @@ async def test_cm_mnbc_sound(evse_slac_session, evse_mac):
     )
 
     with patch(
-        "slac.session.readeth", new=AsyncMock(return_value=atten_profile_ind_frame)
+        "pyslac.session.readeth", new=AsyncMock(return_value=atten_profile_ind_frame)
     ):
         # mocking of data that is set in previous steps
         # The timeout is set here, because originally it would be only
@@ -265,7 +267,9 @@ async def test_cm_atten_charac(evse_slac_session, evse_mac):
         + homeplug_header.pack_big()
         + atten_car_rsp.pack_big()
     )
-    with patch("slac.session.readeth", new=AsyncMock(return_value=atten_car_rsp_frame)):
+    with patch(
+        "pyslac.session.readeth", new=AsyncMock(return_value=atten_car_rsp_frame)
+    ):
         evse_slac_session.send_frame = AsyncMock()
         # Fake that we already received these parameters before, during
         # SLAC Param message sequence
@@ -292,7 +296,9 @@ async def test_cm_atten_charac(evse_slac_session, evse_mac):
         + homeplug_header.pack_big()
         + atten_car_rsp.pack_big()
     )
-    with patch("slac.session.readeth", new=AsyncMock(return_value=atten_car_rsp_frame)):
+    with patch(
+        "pyslac.session.readeth", new=AsyncMock(return_value=atten_car_rsp_frame)
+    ):
         with pytest.raises(ValueError):
             await evse_slac_session.cm_atten_char()
             assert evse_slac_session.state == STATE_UNMATCHED
@@ -304,7 +310,9 @@ async def test_cm_atten_charac(evse_slac_session, evse_mac):
         + homeplug_header.pack_big()
         + atten_car_rsp.pack_big()
     )
-    with patch("slac.session.readeth", new=AsyncMock(return_value=atten_car_rsp_frame)):
+    with patch(
+        "pyslac.session.readeth", new=AsyncMock(return_value=atten_car_rsp_frame)
+    ):
         with pytest.raises(ValueError):
             await evse_slac_session.cm_atten_char()
             assert evse_slac_session.state == STATE_UNMATCHED
@@ -327,7 +335,7 @@ async def test_slac_match(evse_slac_session, evse_mac):
     )
 
     with patch(
-        "slac.session.readeth", new=AsyncMock(return_value=slac_match_req_frame)
+        "pyslac.session.readeth", new=AsyncMock(return_value=slac_match_req_frame)
     ):
         # mock of the send_frame routine
         evse_slac_session.send_frame = AsyncMock()
