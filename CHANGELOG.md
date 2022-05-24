@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - switched the package upload to public pypi server by @tropxy in https://github.com/SwitchEV/slac/pull/24
+- refactored the package name to pyslac by @tropxy in https://github.com/SwitchEV/pyslac/pull/26
 
 ## [0.7.1] - 2022-04-28
 
