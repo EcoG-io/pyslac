@@ -5,6 +5,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2022-05-24
+
+### Changed
+- bumped version to be published in pypi server by @tropxy in https://github.com/SwitchEV/pyslac/pull/27
+
 ## [0.8.0] - 2022-05-24
 
 ### Changed
