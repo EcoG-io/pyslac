@@ -103,7 +103,7 @@ fails the attempt.
 That task includes calls to two stub methods `notify_matching_ongoing` and
 `notify_matching_failed`, which can be used by the end user to notify other services
 of the current SLAC matching state ("ongoing" or "failed"). This can be useful
-for the use case defined in ISO 15118-3, section 7, where different strategies need
+for the use case defined in ISO 15118-3, section 7, where different strategies need to
 be carried on, depending on if SLAC matching has started after or before EIM
 authentication was completed.
 
@@ -114,7 +114,7 @@ brokers.
 
 In that case, the user would have some external service monitoring the Control Pilot
 state, which would send the state to the SLAC application. The Slac Handler would then
-be waiting, listening for the Control Pilot state notification and on reception of it,
+await, listening for the Control Pilot state notification and upon its reception,
 would call the `process_cp_state`, which in its turn would spawn a matching process task.
 
 
