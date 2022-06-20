@@ -31,8 +31,9 @@ help:
 	@if [ -z ${IS_POETRY} ]; then pip install poetry; fi
 
 .check-os:
-	# The @ is to surpress the output of the evaluation
-	@if [ ${IS_LINUX_OS} -eq 0 ]; then echo "This Recipe is not available in non-Linux Systems"; exit 3; fi
+	@# The @ is to supress the output of the evaluation
+	@if [ ${IS_LINUX_OS} -eq 0 ]; then echo "This recipe is not available in non-Linux Systems. \
+	Please, consider using 'make build' to run the tests in a Docker container"; exit 3; fi
 
 .deps:
 	@if [ -z ${IS_POETRY} ]; then pip install poetry; fi

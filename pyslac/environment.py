@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Config:
     slac_init_timeout: Optional[int] = None
+    slac_atten_results_timeout: Optional[int] = None
     log_level: Optional[int] = None
 
     def load_envs(self, env_path: Optional[str] = None) -> None:
@@ -34,6 +35,10 @@ class Config:
             "SLAC_INIT_TIMEOUT", default=Timers.SLAC_INIT_TIMEOUT
         )
 
+        self.slac_atten_results_timeout = env.int(
+            "ATTEN_RESULTS_TIMEOUT",
+            default=None
+        )
         self.log_level = env.str("LOG_LEVEL", default="INFO")
 
         env.seal()  # raise all errors at once, if any

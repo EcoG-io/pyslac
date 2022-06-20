@@ -3,7 +3,6 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 
 from pyslac.enums import (
-    ATTEN_RESULTS_TIMEOUT,
     BROADCAST_ADDR,
     CM_ATTEN_CHAR,
     CM_ATTEN_PROFILE,
@@ -50,6 +49,7 @@ from pyslac.utils import half_round as hw
 
 PEV_MAC = b"\xBB" * 6
 RUN_ID = b"\xFA" * 8
+CONFIG_ATTEN_TIMEOUT = 1200
 
 
 @pytest.mark.asyncio
@@ -178,8 +178,14 @@ async def test_cm_start_atten_charac(evse_slac_session):
         await evse_slac_session.cm_start_atten_charac()
 
         assert evse_slac_session.num_expected_sounds == SLAC_MSOUNDS
-        assert evse_slac_session.time_out_ms == ATTEN_RESULTS_TIMEOUT
+        assert evse_slac_session.time_out_ms == SLAC_ATTEN_TIMEOUT * 100
         assert evse_slac_session.forwarding_sta == PEV_MAC
+
+        # Test to assert that if the config is used, the session timeout is
+        # set by the config and not by the StartAttenChar message
+        evse_slac_session.config.slac_atten_results_timeout = CONFIG_ATTEN_TIMEOUT
+        await evse_slac_session.cm_start_atten_charac()
+        assert evse_slac_session.time_out_ms == CONFIG_ATTEN_TIMEOUT
 
 
 @pytest.mark.asyncio

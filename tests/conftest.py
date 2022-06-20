@@ -11,7 +11,7 @@ IFACE = "en0"
 
 @pytest.fixture
 def dummy_config() -> "Config":
-    return Config(slac_init_timeout=1)
+    return Config(slac_init_timeout=1, slac_atten_results_timeout=None)
 
 
 @pytest.fixture
