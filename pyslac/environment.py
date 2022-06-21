@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 import environs
+from marshmallow.validate import Range
 
 from pyslac.enums import Timers
 
@@ -35,7 +36,12 @@ class Config:
             "SLAC_INIT_TIMEOUT", default=Timers.SLAC_INIT_TIMEOUT
         )
 
-        self.slac_atten_results_timeout = env.int("ATTEN_RESULTS_TIMEOUT", default=None)
+        self.slac_atten_results_timeout = env.int(
+            "ATTEN_RESULTS_TIMEOUT",
+            default=None,
+            validate=Range(max=1050)
+        )
+
         self.log_level = env.str("LOG_LEVEL", default="INFO")
 
         env.seal()  # raise all errors at once, if any
