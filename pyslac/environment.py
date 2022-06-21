@@ -36,6 +36,8 @@ class Config:
             "SLAC_INIT_TIMEOUT", default=Timers.SLAC_INIT_TIMEOUT
         )
 
+        # A max value of 1050 is imposed to this env as the EV timeout value is
+        # 1200 ms as described in [V2G3-A09-31] and we dont want to trigger it
         self.slac_atten_results_timeout = env.int(
             "ATTEN_RESULTS_TIMEOUT",
             default=None,

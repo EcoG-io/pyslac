@@ -125,11 +125,11 @@ can be modified by setting them as environmental variables.
 
 The following table provides a few of the available variables:
 
-| ENV                   | Default Value | Description                                                                    |
-|-----------------------|---------------|--------------------------------------------------------------------------------|
-| SLAC_INIT_TIMEOUT     | `50`          | Timeout[s] for the reception of the first slac message after state B detection |
-| ATTEN_RESULTS_TIMEOUT | `None`        | Timeout[s] for the reception of all the MNBC sounds                            |
-| LOG_LEVEL             | `INFO`        | Level of the Python log service                                                |
+| ENV                   | Default Value | Description                                                                                                       |
+|-----------------------|---------------|-------------------------------------------------------------------------------------------------------------------|
+| SLAC_INIT_TIMEOUT     | `50`          | Timeout[s] for the reception of the first slac message after state B detection                                    |
+| ATTEN_RESULTS_TIMEOUT | `None`        | Timeout[ms] for the reception of all the MNBC sounds. When not set, the system uses the timeout defined by the EV |
+| LOG_LEVEL             | `INFO`        | Level of the Python log service                                                                                   |
 
 
 These env variables, can be modified using `.env` files, which this project includes,
