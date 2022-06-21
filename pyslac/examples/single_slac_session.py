@@ -11,7 +11,7 @@ from typing import List, Optional
 
 from pyslac.environment import Config
 from pyslac.session import SlacEvseSession, SlacSessionController
-from pyslac.utils import wait_till_finished
+from pyslac.utils import wait_for_tasks
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -81,7 +81,7 @@ async def main(env_path: Optional[str] = None):
     json_file.close()
     slac_handler = SlacHandler(slac_config)
     tasks = [slac_handler.start(cs_config)]
-    await wait_till_finished(tasks)
+    await wait_for_tasks(tasks)
 
 
 def run():

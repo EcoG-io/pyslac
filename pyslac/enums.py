@@ -101,7 +101,6 @@ class Timers(float, Enum):
 # Timers.SLAC_ATTEN_TIMEOUT is the only value in the Timers class that its use
 # is supposed to be done as an integer (type int)
 SLAC_ATTEN_TIMEOUT = 6  # [TT_EVSE_match_MNBC = 600 ms]
-ATTEN_RESULTS_TIMEOUT = 1150  # in ms
 
 
 class FramesSizes(int, Enum):

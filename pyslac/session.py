@@ -7,7 +7,6 @@ from os import urandom
 from typing import List, Optional, Union
 
 from pyslac.enums import (
-    ATTEN_RESULTS_TIMEOUT,
     CM_ATTEN_CHAR,
     CM_ATTEN_PROFILE,
     CM_MNBC_SOUND,
@@ -453,19 +452,23 @@ class SlacEvseSession(SlacSession):
         self.num_expected_sounds = start_atten_char.num_sounds
         # the value sent by the EV for the timeout has a factor of 1/100
         # Thus, if the value is e.g. 6, the original value is 600 ms (6 * 100)
-        # ATTENTION: Given that Alfen Socket Board interaction with the
-        # Smart Controller Board adds a big overhead when sending the data
-        # frames, SLAC does not receive all the sounds within
-        # `start_atten_char.time_out`. However, according to the following:
+        # ATTENTION
+        # There are cases where there are overhead on the incoming sound
+        # frames, causing a timeout.
+        # However, according to the following requirements:
         # [V2G3-A09-30] - The EV shall start the timeout timer
         # TT_EV_atten_results (max 1200 ms) when sending the first
         # CM_START_ATTEN_CHAR.IND.
         # [V2G3-A09-31] - While the timer TT_EV_atten_results (max 1200 ms) is
         # running, the EV shall process incoming CM_ATTEN_CHAR.IND messages.
-        # Which means, we can use a larger timeout (like 900 ms) so that
+        # Which means, we can use a larger timeout (like 800 ms) so that
         # we receive all or mostly all of the sounds.
-        # self.time_out_ms = start_atten_char.time_out * 100
-        self.time_out_ms = ATTEN_RESULTS_TIMEOUT
+        # In order to still respect the standard, we just override the time
+        # set by the EV in CM_START_ATTEN_CHAR if ATTEN_RESULTS_TIMEOUT is
+        # not None
+        self.time_out_ms = start_atten_char.time_out * 100
+        if self.config.slac_atten_results_timeout:
+            self.time_out_ms = self.config.slac_atten_results_timeout
         self.forwarding_sta = start_atten_char.forwarding_sta
         logger.debug("CM_START_ATTEN_CHAR: Finished!")
 
