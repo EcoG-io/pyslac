@@ -5,14 +5,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.2] - 2022-06-28
+
+- add License file to the repo by @tropxy in https://github.com/SwitchEV/pyslac/pull/28
+- Added ATTEN_RESULTS_TIMEOUT as an ENV by @tropxy in https://github.com/SwitchEV/pyslac/pull/30
+- Change/atten result timeout validation by @tropxy in https://github.com/SwitchEV/pyslac/pull/31
+
 ## [0.8.1] - 2022-05-24
 
 ### Changed
+
 - bumped version to be published in pypi server by @tropxy in https://github.com/SwitchEV/pyslac/pull/27
 
 ## [0.8.0] - 2022-05-24
 
 ### Changed
+
 - switched the package upload to public pypi server by @tropxy in https://github.com/SwitchEV/slac/pull/24
 - refactored the package name to pyslac by @tropxy in https://github.com/SwitchEV/pyslac/pull/26
 
@@ -27,12 +35,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- removed references of the switch mqtt API  by @tropxy in https://github.com/SwitchEV/slac/pull/18
+- removed references of the switch mqtt API by @tropxy in https://github.com/SwitchEV/slac/pull/18
 
 ### Added
 
-- added enable_hlc_charging as a method of SlacSessionController  by @tropxy in https://github.com/SwitchEV/slac/pull/19
-
+- added enable_hlc_charging as a method of SlacSessionController by @tropxy in https://github.com/SwitchEV/slac/pull/19
 
 ## [0.6.0] - 2022-04-12
 
