@@ -225,11 +225,6 @@ class SlacEvseSession(SlacSession):
         self.evse_id = evse_id
         self.config = config
         host_mac = get_if_hwaddr(self.iface)
-        logger.info(
-            f"\n\n#################################################"
-            f"\n ###### Starting PySlac version: {__version__} #######"
-            f"\n#################################################\n"
-        )
         logger.debug(
             f"Session created for evse_id {self.evse_id} on " f"interface {self.iface}"
         )
@@ -837,7 +832,11 @@ class SlacEvseSession(SlacSession):
 
 class SlacSessionController:
     def __init__(self):
-        pass
+        logger.info(
+            f"\n\n#################################################"
+            f"\n ###### Starting PySlac version: {__version__} #######"
+            f"\n#################################################\n"
+        )
 
     async def notify_matching_ongoing(self, evse_id: str):
         """
