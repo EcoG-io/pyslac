@@ -6,6 +6,7 @@ from inspect import isawaitable
 from os import urandom
 from typing import List, Optional, Union
 
+from pyslac import __version__
 from pyslac.enums import (
     CM_ATTEN_CHAR,
     CM_ATTEN_PROFILE,
@@ -224,6 +225,11 @@ class SlacEvseSession(SlacSession):
         self.evse_id = evse_id
         self.config = config
         host_mac = get_if_hwaddr(self.iface)
+        logger.info(
+            f"\n\n#################################################"
+            f"\n ###### Starting PySlac version: {__version__} #######"
+            f"\n#################################################\n"
+        )
         logger.debug(
             f"Session created for evse_id {self.evse_id} on " f"interface {self.iface}"
         )
