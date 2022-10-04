@@ -5,6 +5,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.3] - 2022-10-04
+
+- Print version on session startup by @mdwcrft in https://github.com/SwitchEV/pyslac/pull/34
+
 ## [0.8.2] - 2022-06-28
 
 - add License file to the repo by @tropxy in https://github.com/SwitchEV/pyslac/pull/28
