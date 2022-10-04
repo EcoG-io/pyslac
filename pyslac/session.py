@@ -6,6 +6,7 @@ from inspect import isawaitable
 from os import urandom
 from typing import List, Optional, Union
 
+from pyslac import __version__
 from pyslac.enums import (
     CM_ATTEN_CHAR,
     CM_ATTEN_PROFILE,
@@ -831,7 +832,11 @@ class SlacEvseSession(SlacSession):
 
 class SlacSessionController:
     def __init__(self):
-        pass
+        logger.info(
+            f"\n\n#################################################"
+            f"\n ###### Starting PySlac version: {__version__} #######"
+            f"\n#################################################\n"
+        )
 
     async def notify_matching_ongoing(self, evse_id: str):
         """
