@@ -499,7 +499,7 @@ class SlacEvseSession(SlacSession):
                         f"PEV MAC: {self.pev_mac}; "
                         f"Source MAC: {ether_frame.src_mac}"
                     )
-                logger.debug("MNBC Sound received\n")
+                logger.debug("MNBC Sound received")
                 logger.debug("Remaining number of sounds: %s", mnbc_sound_ind.cnt)
             else:
                 logger.debug(
@@ -918,7 +918,7 @@ class SlacSessionController:
             number_of_retries -= 1
             await slac_session.evse_slac_parm()
             if slac_session.state == STATE_MATCHING:
-                logger.debug("Matching ongoing...")
+                logger.info("Matching ongoing...")
                 await self.notify_matching_ongoing(slac_session.evse_id)
                 try:
                     await slac_session.atten_charac_routine()
@@ -930,7 +930,7 @@ class SlacSessionController:
                         f"Number of retries left {number_of_retries}"
                     )
             if slac_session.state == STATE_MATCHED:
-                logger.debug("PEV-EVSE MATCHED Successfully, Link Established")
+                logger.info("PEV-EVSE MATCHED Successfully, Link Established")
                 while True:
                     await asyncio.sleep(2.0)
 
