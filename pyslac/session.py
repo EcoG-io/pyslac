@@ -300,8 +300,8 @@ class SlacEvseSession(SlacSession):
         nmk = urandom(16)
         # the NID shall be derived from the NMK and its 2 MSBs must be 0b00
         nid = generate_nid(nmk)
-        logger.debug("New NMK: %s\n", hexlify(nmk))
-        logger.debug("New NID: %s\n", hexlify(nid))
+        logger.debug("New NMK: %s", hexlify(nmk))
+        logger.debug("New NID: %s", hexlify(nid))
         ethernet_header = EthernetHeader(
             dst_mac=self.evse_plc_mac, src_mac=self.evse_mac
         )
