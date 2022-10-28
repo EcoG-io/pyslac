@@ -688,6 +688,9 @@ class SlacEvseSession(SlacSession):
             logger.exception(e)
             raise e
         logger.debug("CM_ATTEN_CHAR: Finished!")
+        logger.debug(f"Num sounds received {self.num_total_sounds}")
+        logger.debug(f"Num total sounds: {self.num_total_sounds}")
+        logger.debug(f"Num expected sounds: {self.num_expected_sounds}")
 
     async def cm_slac_match(self):
         logger.debug("CM_SLAC_MATCH: Started...")
