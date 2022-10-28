@@ -293,7 +293,7 @@ class SlacEvseSession(SlacSession):
 
         The only secure way to remove a STA from an AVLN is to change the NMK
         """
-        logger.debug("CM_SET_KEY: Started...")
+        logger.info("CM_SET_KEY: Started...")
         # for each new set_key message sent (or pyslac session),
         # a new pair of NID (Network ID) and NMK (Network Mask) shall be
         # generated
@@ -343,7 +343,7 @@ class SlacEvseSession(SlacSession):
                 raise ValueError("SetKeyCnf data parsing into the class failed") from e
         logger.debug("Registering NMK and NID into the PLC node...")
         await asyncio.sleep(SLAC_SETTLE_TIME)
-        logger.debug("CM_SET_KEY: Finished!")
+        logger.info("CM_SET_KEY: Finished!")
         return data_rcvd
 
     async def evse_slac_parm(self) -> None:
