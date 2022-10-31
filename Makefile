@@ -77,13 +77,13 @@ run-ev-slac:
 	sudo $(shell which python) pyslac/examples/ev_slac_scapy.py
 
 mypy:
-	mypy --config-file mypy.ini pyslac tests
+	mypy --config-file pyproject.toml pyslac tests
 
 reformat:
-	isort pyslac tests && black --exclude --line-length=88 pyslac tests
+	isort pyslac tests && black --exclude pyslac tests
 
 black:
-	black --exclude --check --diff --line-length=88 pyslac tests
+	black --exclude --check --diff pyslac tests
 
 flake8:
 	flake8 --config .flake8 pyslac tests
