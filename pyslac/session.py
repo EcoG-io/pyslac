@@ -921,7 +921,7 @@ class SlacSessionController:
             number_of_retries -= 1
             await slac_session.evse_slac_parm()
             if slac_session.state == STATE_MATCHING:
-                logger.info("Matching ongoing...")
+                logger.info(f"Matching ongoing (EVSE ID: {slac_session.evse_id}. Run ID: {slac_session.run_id}).")
                 await self.notify_matching_ongoing(slac_session.evse_id)
                 try:
                     await slac_session.atten_charac_routine()
@@ -933,7 +933,7 @@ class SlacSessionController:
                         f"Number of retries left {number_of_retries}"
                     )
             if slac_session.state == STATE_MATCHED:
-                logger.info("PEV-EVSE MATCHED Successfully, Link Established")
+                logger.info(f"PEV-EVSE MATCHED Successfully, Link Established (EVSE ID: {slac_session.evse_id}. Run ID: {slac_session.run_id}).")
                 while True:
                     await asyncio.sleep(2.0)
 
