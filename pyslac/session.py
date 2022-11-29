@@ -293,15 +293,15 @@ class SlacEvseSession(SlacSession):
 
         The only secure way to remove a STA from an AVLN is to change the NMK
         """
-        logger.debug("CM_SET_KEY: Started...")
+        logger.info("CM_SET_KEY: Started...")
         # for each new set_key message sent (or pyslac session),
         # a new pair of NID (Network ID) and NMK (Network Mask) shall be
         # generated
         nmk = urandom(16)
         # the NID shall be derived from the NMK and its 2 MSBs must be 0b00
         nid = generate_nid(nmk)
-        logger.debug("New NMK: %s\n", hexlify(nmk))
-        logger.debug("New NID: %s\n", hexlify(nid))
+        logger.debug("New NMK: %s", hexlify(nmk))
+        logger.debug("New NID: %s", hexlify(nid))
         ethernet_header = EthernetHeader(
             dst_mac=self.evse_plc_mac, src_mac=self.evse_mac
         )
@@ -343,7 +343,7 @@ class SlacEvseSession(SlacSession):
                 raise ValueError("SetKeyCnf data parsing into the class failed") from e
         logger.debug("Registering NMK and NID into the PLC node...")
         await asyncio.sleep(SLAC_SETTLE_TIME)
-        logger.debug("CM_SET_KEY: Finished!")
+        logger.info("CM_SET_KEY: Finished!")
         return data_rcvd
 
     async def evse_slac_parm(self) -> None:
@@ -499,7 +499,7 @@ class SlacEvseSession(SlacSession):
                         f"PEV MAC: {self.pev_mac}; "
                         f"Source MAC: {ether_frame.src_mac}"
                     )
-                logger.debug("MNBC Sound received\n")
+                logger.debug("MNBC Sound received")
                 logger.debug("Remaining number of sounds: %s", mnbc_sound_ind.cnt)
             else:
                 logger.debug(
@@ -688,6 +688,9 @@ class SlacEvseSession(SlacSession):
             logger.exception(e)
             raise e
         logger.debug("CM_ATTEN_CHAR: Finished!")
+        logger.debug(f"Num sounds received {self.num_total_sounds}")
+        logger.debug(f"Num total sounds: {self.num_total_sounds}")
+        logger.debug(f"Num expected sounds: {self.num_expected_sounds}")
 
     async def cm_slac_match(self):
         logger.debug("CM_SLAC_MATCH: Started...")
@@ -918,7 +921,9 @@ class SlacSessionController:
             number_of_retries -= 1
             await slac_session.evse_slac_parm()
             if slac_session.state == STATE_MATCHING:
-                logger.debug("Matching ongoing...")
+                logger.info(
+                    f"Matching ongoing (EVSE ID: {slac_session.evse_id}. Run ID: {slac_session.run_id})."
+                )
                 await self.notify_matching_ongoing(slac_session.evse_id)
                 try:
                     await slac_session.atten_charac_routine()
@@ -930,7 +935,9 @@ class SlacSessionController:
                         f"Number of retries left {number_of_retries}"
                     )
             if slac_session.state == STATE_MATCHED:
-                logger.debug("PEV-EVSE MATCHED Successfully, Link Established")
+                logger.info(
+                    f"PEV-EVSE MATCHED Successfully, Link Established (EVSE ID: {slac_session.evse_id}. Run ID: {slac_session.run_id})."
+                )
                 while True:
                     await asyncio.sleep(2.0)
 
